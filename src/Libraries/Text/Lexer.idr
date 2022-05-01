@@ -112,19 +112,20 @@ range : (start : Char) -> (end : Char) -> Lexer
 range start end = pred (\x => (x >= min start end)
                            && (x <= max start end))
 
-mutual
-  ||| Recognise a sequence of at least one sub-lexers
-  ||| /`l`+/
-  export
-  some : Lexer -> Lexer
-  some l = l <+> many l
+||| Recognise a sequence of at zero or more sub-lexers. This is not
+||| guaranteed to consume input
+||| /`l`\*/
+export
+many : Lexer -> Recognise False
 
-  ||| Recognise a sequence of at zero or more sub-lexers. This is not
-  ||| guaranteed to consume input
-  ||| /`l`\*/
-  export
-  many : Lexer -> Recognise False
-  many l = opt (some l)
+||| Recognise a sequence of at least one sub-lexers
+||| /`l`+/
+export
+some : Lexer -> Lexer
+some l = l <+> many l
+
+-- declared above
+many l = opt (some l)
 
 ||| Repeat the sub-lexer `l` one or more times until the lexer
 ||| `stopBefore` is encountered. `stopBefore` will not be consumed.

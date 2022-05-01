@@ -70,82 +70,88 @@ choice : Foldable t =>
          Grammar state tok c a
 choice = choiceMap id
 
-mutual
-  ||| Parse one or more things
-  export
-  some : Grammar state tok True a ->
-         Grammar state tok True (List1 a)
-  some p = pure (!p ::: !(many p))
+||| Parse zero or more things (may match the empty input)
+export
+many : Grammar state tok True a ->
+       Grammar state tok False (List a)
 
-  ||| Parse zero or more things (may match the empty input)
-  export
-  many : Grammar state tok True a ->
-         Grammar state tok False (List a)
-  many p = option [] (forget <$> some p)
+||| Parse one or more things
+export
+some : Grammar state tok True a ->
+       Grammar state tok True (List1 a)
+some p = pure (!p ::: !(many p))
 
-mutual
-  private
-  count1 : (q : Quantity) ->
+many p = option [] (forget <$> some p)
+
+||| Parse `p`, repeated as specified by `q`, returning the list of values.
+export
+count : (q : Quantity) ->
+        (p : Grammar state tok True a) ->
+        Grammar state tok (isSucc (min q)) (List a)
+
+private
+count1 : (q : Quantity) ->
+         (p : Grammar state tok True a) ->
+         Grammar state tok True (List a)
+count1 q p = do
+        x <- p
+        seq (count q p)
+            (\xs => pure (x :: xs))
+
+-- declared above
+count (Qty Z Nothing) p = many p
+count (Qty Z (Just Z)) _ = pure []
+count (Qty Z (Just (S max))) p = option [] $ count1 (atMost max) p
+count (Qty (S min) Nothing) p = count1 (atLeast min) p
+count (Qty (S min) (Just Z)) _ = fail "Quantity out of order"
+count (Qty (S min) (Just (S max))) p = count1 (between (S min) max) p
+
+||| Parse zero or more instances of `p` until `end` succeeds, returning the
+||| list of values from `p`. Guaranteed to consume input if `end` consumes.
+export
+manyTill : {c : Bool} ->
+           (end : Grammar state tok c e) ->
            (p : Grammar state tok True a) ->
-           Grammar state tok True (List a)
-  count1 q p = do x <- p
-                  seq (count q p)
-                      (\xs => pure (x :: xs))
+           Grammar state tok c (List a)
 
-  ||| Parse `p`, repeated as specified by `q`, returning the list of values.
-  export
-  count : (q : Quantity) ->
-          (p : Grammar state tok True a) ->
-          Grammar state tok (isSucc (min q)) (List a)
-  count (Qty Z Nothing) p = many p
-  count (Qty Z (Just Z)) _ = pure []
-  count (Qty Z (Just (S max))) p = option [] $ count1 (atMost max) p
-  count (Qty (S min) Nothing) p = count1 (atLeast min) p
-  count (Qty (S min) (Just Z)) _ = fail "Quantity out of order"
-  count (Qty (S min) (Just (S max))) p = count1 (between (S min) max) p
+||| Parse one or more instances of `p` until `end` succeeds, returning the
+||| list of values from `p`. Guaranteed to consume input.
+export
+someTill : {c : Bool} ->
+           (end : Grammar state tok c e) ->
+           (p : Grammar state tok True a) ->
+           Grammar state tok True (List1 a)
+someTill {c} end p = do
+        x <- p
+        seq (manyTill end p)
+            (\xs => pure (x ::: xs))
 
-mutual
-  ||| Parse one or more instances of `p` until `end` succeeds, returning the
-  ||| list of values from `p`. Guaranteed to consume input.
-  export
-  someTill : {c : Bool} ->
-             (end : Grammar state tok c e) ->
-             (p : Grammar state tok True a) ->
-             Grammar state tok True (List1 a)
-  someTill {c} end p = do x <- p
-                          seq (manyTill end p)
-                              (\xs => pure (x ::: xs))
+-- declared above
+manyTill {c} end p = rewrite sym (andTrueNeutral c) in
+                             map (const []) end <|> (forget <$> someTill end p)
 
-  ||| Parse zero or more instances of `p` until `end` succeeds, returning the
-  ||| list of values from `p`. Guaranteed to consume input if `end` consumes.
-  export
-  manyTill : {c : Bool} ->
-             (end : Grammar state tok c e) ->
-             (p : Grammar state tok True a) ->
-             Grammar state tok c (List a)
-  manyTill {c} end p = rewrite sym (andTrueNeutral c) in
-                               map (const []) end <|> (forget <$> someTill end p)
+||| Parse zero or more instance of `skip` until `p` is encountered,
+||| returning its value.
+export
+afterMany : {c : Bool} ->
+            (skip : Grammar state tok True s) ->
+            (p : Grammar state tok c a) ->
+            Grammar state tok c a
 
-mutual
-  ||| Parse one or more instance of `skip` until `p` is encountered,
-  ||| returning its value.
-  export
-  afterSome : {c : Bool} ->
-              (skip : Grammar state tok True s) ->
-              (p : Grammar state tok c a) ->
-              Grammar state tok True a
-  afterSome skip p = do ignore $ skip
-                        afterMany skip p
+||| Parse one or more instance of `skip` until `p` is encountered,
+||| returning its value.
+export
+afterSome : {c : Bool} ->
+            (skip : Grammar state tok True s) ->
+            (p : Grammar state tok c a) ->
+            Grammar state tok True a
+afterSome skip p = do
+        ignore $ skip
+        afterMany skip p
 
-  ||| Parse zero or more instance of `skip` until `p` is encountered,
-  ||| returning its value.
-  export
-  afterMany : {c : Bool} ->
-              (skip : Grammar state tok True s) ->
-              (p : Grammar state tok c a) ->
-              Grammar state tok c a
-  afterMany {c} skip p = rewrite sym (andTrueNeutral c) in
-                                 p <|> afterSome skip p
+-- declared above
+afterMany {c} skip p = rewrite sym (andTrueNeutral c) in
+                               p <|> afterSome skip p
 
 ||| Parse one or more things, each separated by another thing.
 export
