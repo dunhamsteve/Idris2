@@ -23,6 +23,7 @@ data Var =
 
     ||| Index of a local variables
     VLoc  Int  |
+    -- REVIEW - Maybe add names
 
     ||| Index of a mangled toplevel function
     VRef  Int
@@ -71,23 +72,23 @@ mutual
     ||| Lambda expression
     |||
     ||| An empty argument list represents a delayed computation
-    ELam      : List Var -> Stmt (Just Returns) -> Exp
+    ELam      : FC -> List Var -> Stmt (Just Returns) -> Exp
 
     ||| Function application.
     |||
     ||| In case of a zero-argument list, we might also be
     ||| dealing with forcing a delayed computation.
-    EApp      : Exp -> List Exp -> Exp
+    EApp      : FC -> Exp -> List Exp -> Exp
 
     ||| Saturated construtor application.
     |||
     ||| The tag either represents the name of a type constructor
     ||| (when we are pattern matching on types) or the index
     ||| of a data constructor.
-    ECon      : (tag : Either Int Name) -> ConInfo -> List Exp -> Exp
+    ECon      : FC -> (tag : Either Int Name) -> ConInfo -> List Exp -> Exp
 
     ||| Primitive operation
-    EOp       : {0 arity : Nat} -> PrimFn arity -> Vect arity Exp -> Exp
+    EOp       : {0 arity : Nat} -> FC -> PrimFn arity -> Vect arity Exp -> Exp
 
     ||| Externally defined primitive operation.
     EExtPrim  : Name -> List Exp -> Exp

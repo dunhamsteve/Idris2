@@ -12,6 +12,7 @@ import Compiler.ES.Doc
 import Compiler.ES.ToAst
 import Compiler.ES.TailRec
 import Compiler.ES.State
+import Compiler.ES.SourceMap
 import Compiler.NoMangle
 import Libraries.Data.SortedMap
 import Protocol.Hex
@@ -575,16 +576,16 @@ jsPrim nm docs = case (dropAllNS nm, docs) of
 -- whether it needs to be lifted to the surrounding scope and assigned
 -- to a new variable.
 isArg : CGMode -> Exp -> Bool
-isArg Pretty (ELam _ $ Block _ _)           = False
-isArg Pretty (ELam _ $ ConSwitch _ _ _ _)   = False
-isArg Pretty (ELam _ $ ConstSwitch _ _ _ _) = False
-isArg Pretty (ELam _ $ Error _)             = False
+isArg Pretty (ELam _ _ $ Block _ _)           = False
+isArg Pretty (ELam _ _ $ ConSwitch _ _ _ _)   = False
+isArg Pretty (ELam _ _ $ ConstSwitch _ _ _ _) = False
+isArg Pretty (ELam _ _ $ Error _)             = False
 isArg _      _                              = True
 
 -- like `isArg` but for function expressions, which we are about
 -- to apply
 isFun : Exp -> Bool
-isFun (ELam _ _) = False
+isFun (ELam _ _ _) = False
 isFun _          = True
 
 -- creates a JS switch statment from the given scrutinee and
@@ -634,23 +635,23 @@ mutual
       -> Exp
       -> Core Doc
   exp (EMinimal x) = pure $ minimal !(get NoMangleMap) x
-  exp (ELam xs (Return $ y@(ECon _ _ _))) = do
+  exp (ELam fc xs (Return $ y@(ECon _ _ _ _))) = do
      nm <- get NoMangleMap
-     map (\e => lambdaArgs nm xs <+> paren e) (exp y)
-  exp (ELam xs (Return $ y)) = do
+     Ann fc <$> map (\e => lambdaArgs nm xs <+> paren e) (exp y)
+  exp (ELam fc xs (Return $ y)) = do
      nm <- get NoMangleMap
-     (lambdaArgs nm xs <+> ) <$> exp y
-  exp (ELam xs y) = do
+     Ann fc <$> (lambdaArgs nm xs <+> ) <$> exp y
+  exp (ELam fc xs y) = do
      nm <- get NoMangleMap
-     (lambdaArgs nm xs <+>) . block <$> stmt y
-  exp (EApp x xs) = do
+     Ann fc <$> (lambdaArgs nm xs <+>) . block <$> stmt y
+  exp (EApp fc x xs) = do
     o    <- exp x
     args <- traverse exp xs
-    pure $ app o args
+    pure $ Ann fc $ app o args
 
-  exp (ECon tag ci xs) = applyCon ci tag <$> traverse exp xs
+  exp (ECon fc tag ci xs) = Ann fc <$> applyCon ci tag <$> traverse exp xs
 
-  exp (EOp x xs) = traverseVect exp xs >>= jsOp x
+  exp (EOp fc x xs) = Ann fc <$> (traverseVect exp xs >>= jsOp x)
   exp (EExtPrim x xs) = traverse exp xs >>= jsPrim x
   exp (EPrimVal x) = pure . Text $ jsConstant x
   exp EErased = pure "undefined"
@@ -715,7 +716,7 @@ printDoc Minimal y = compact y
 def :  {auto c : Ref ESs ESSt}
     -> {auto nm : Ref NoMangleMap NoMangleMap}
     -> Function
-    -> Core String
+    -> Core Doc
 def (MkFunction n as body) = do
   reset
   ref  <- getOrRegisterRef n
@@ -725,19 +726,19 @@ def (MkFunction n as body) = do
   case args of
     -- zero argument toplevel functions are converted to
     -- lazily evaluated constants.
-    [] => pure $ printDoc mde $
+    [] => pure $
       constant (var !(get NoMangleMap) ref) (
         "__lazy(" <+> function neutral [] b <+> ")"
       )
-    _  => pure $ printDoc mde $ function (var !(get NoMangleMap) ref) (map (var !(get NoMangleMap)) args) b
+    _  => pure $ function (var !(get NoMangleMap) ref) (map (var !(get NoMangleMap)) args) b
 
 -- generate code for the given foreign function definition
 foreign :  {auto c : Ref ESs ESSt}
         -> {auto d : Ref Ctxt Defs}
         -> {auto nm : Ref NoMangleMap NoMangleMap}
         -> (Name,FC,NamedDef)
-        -> Core (List String)
-foreign (n, _, MkNmForeign path _ _) = pure . pretty <$> foreignDecl n path
+        -> Core Doc
+foreign (n, _, MkNmForeign path _ _) = foreignDecl n path
 foreign _                            = pure []
 
 -- name of the toplevel tail call loop from the
@@ -759,7 +760,7 @@ validJSName name =
 ||| Compiles the given `ClosedTerm` for the list of supported
 ||| backends to JS code.
 export
-compileToES : Ref Ctxt Defs -> (cg : CG) -> ClosedTerm -> List String -> Core String
+compileToES : Ref Ctxt Defs -> (cg : CG) -> ClosedTerm -> List String -> Core (String, String)
 compileToES c cg tm ccTypes = do
   _ <- initNoMangle "javascript" validJSName
 
@@ -786,12 +787,12 @@ compileToES c cg tm ccTypes = do
 
       -- tail-call optimized set of toplevel functions
       defs    = TailRec.functions tailRec allDefs
-
+-- FIXME need to concat with LineBreak
   -- pretty printed toplevel function definitions
-  defDecls <- traverse def defs
+  defDecls <- vcat' <$> traverse def defs
 
   -- pretty printed toplevel FFI definitions
-  foreigns <- concat <$> traverse foreign allDefs
+  foreigns <- vcat' <$> traverse foreign allDefs
 
   -- lookup the (possibly mangled) name of the main function
   mainName <- compact . var !(get NoMangleMap) <$> getOrRegisterRef mainExpr
@@ -801,15 +802,20 @@ compileToES c cg tm ccTypes = do
            ++ mainName
            ++ "()}catch(e){if(e instanceof IdrisError){console.log('ERROR: ' + e.message)}else{throw e} }"
 
-      allDecls = fastUnlines $ foreigns ++ defDecls
+      allDecls = foreigns <+> defDecls
 
   st <- get ESs
 
+  -- FIXME - we need to split out linebreaks from these static chunks
+
   -- main preamble containing primops implementations
-  static_preamble <- readDataFile ("js/support.js")
+  -- REVIEW - is this worth it or just leave the lines unattributed with
+  -- vcat . map Text . lines ??
+  support <- vcat . map Text . lines <$> readDataFile ("js/support.js")
 
   -- complete preamble, including content from additional
   -- support files (if any)
-  let pre = showSep "\n" $ static_preamble :: (values $ preamble st)
-
-  pure $ fastUnlines [pre,allDecls,main]
+  -- REVIEW - maybe need to split preamble st, what are the keys...
+  let pre = vcat $ map Text $ concatMap lines (values $ preamble st)
+  let all = vcat [support, pre, allDecls, Text main]
+  pure $ (printDoc mode all, prettyMap all "out.js")  -- [pre,allDecls,main]

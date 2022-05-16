@@ -26,7 +26,7 @@ findNode = do
    pure $ fromMaybe "/usr/bin/env node" path
 
 ||| Compile a TT expression to Node
-compileToNode : Ref Ctxt Defs -> ClosedTerm -> Core String
+compileToNode : Ref Ctxt Defs -> ClosedTerm -> Core (String, String)
 compileToNode c tm = compileToES c Node tm ["node", "javascript"]
 
 ||| Node implementation of the `compileExpr` interface.
@@ -37,16 +37,18 @@ compileExpr :  Ref Ctxt Defs
             -> (outfile : String)
             -> Core (Maybe String)
 compileExpr c tmpDir outputDir tm outfile =
-  do es <- compileToNode c tm
+  do (es, sym) <- compileToNode c tm
      let out = outputDir </> outfile
      Core.writeFile out es
+     let mapOut = outputDir </> outfile ++ ".map"
+     Core.writeFile mapOut sym
      pure (Just out)
 
 ||| Node implementation of the `executeExpr` interface.
 executeExpr : Ref Ctxt Defs -> (tmpDir : String) -> ClosedTerm -> Core ()
 executeExpr c tmpDir tm =
   do let outn = tmpDir </> "_tmp_node.js"
-     js <- compileToNode c tm
+     (js, sym) <- compileToNode c tm
      Core.writeFile outn js
      node <- coreLift findNode
      quoted_node <- pure $ "\"" ++ node ++ "\"" -- Windows often have a space in the path.

@@ -16,7 +16,7 @@ import Data.String
 
 ||| Compile a TT expression to Javascript
 compileToJS : Ref Ctxt Defs ->
-              ClosedTerm -> Core String
+              ClosedTerm -> Core (String, String)
 compileToJS c tm = compileToES c Javascript tm ["browser", "javascript"]
 
 htmlHeader : String
@@ -52,7 +52,7 @@ compileExpr :  Ref Ctxt Defs
             -> (outfile : String)
             -> Core (Maybe String)
 compileExpr c tmpDir outputDir tm outfile =
-  do es <- compileToJS c tm
+  do (es,symMap) <- compileToJS c tm
      let res = addHeaderAndFooter outfile es
      let out = outputDir </> outfile
      Core.writeFile out res

@@ -112,13 +112,13 @@ mutual
   liftMinimal n = lift n toMinimal MVar
 
   -- creates a (possibly multiargument) lambda.
-  lambda : {auto c : Ref ESs ESSt} -> Name -> NamedCExp -> Core Exp
-  lambda n x = go [n] x
+  lambda : {auto c : Ref ESs ESSt} -> FC -> Name -> NamedCExp -> Core Exp
+  lambda fc n x = go [n] x
     where go : List Name -> NamedCExp -> Core Exp
           go ns (NmLam _  n x) = go (n :: ns) x
           go ns x              = do
             vs <- traverse registerLocal (reverse ns)
-            ELam vs <$> stmt Returns x
+            ELam fc vs <$> stmt Returns x
 
   -- convert a `NamedCExp` to a sequence of statements.
   export
@@ -132,7 +132,7 @@ mutual
   -- a function name gets registered or resolved
   stmt e (NmRef _ n) = assign e . EMinimal . MVar <$> getOrRegisterRef n
 
-  stmt e (NmLam _ n x) = assign e <$> lambda n x
+  stmt e (NmLam fc n x) = assign e <$> lambda fc n x
 
   -- in case of a let expression, we just generate two
   -- blocks of statements and concatenate them.
@@ -148,31 +148,31 @@ mutual
   -- when applying a function, we potentially need to
   -- lift both, the function expression itself and the argument
   -- list, to the surrounding scope.
-  stmt e (NmApp _ x xs) = do
+  stmt e (NmApp fc x xs) = do
     (mbx, vx)    <- liftFun x
     (mbxs, args) <- liftArgs xs
-    pure . prepend (mbx ++ mbxs) $ assign e (EApp vx args)
+    pure . prepend (mbx ++ mbxs) $ assign e (EApp fc vx args)
 
-  stmt e (NmCon _ n ci tg xs) = do
+  stmt e (NmCon fc n ci tg xs) = do
     (mbxs, args) <- liftArgs xs
-    pure . prepend mbxs $ assign e (ECon (tag n tg) ci args)
+    pure . prepend mbxs $ assign e (ECon fc (tag n tg) ci args)
 
-  stmt e o@(NmOp _ x xs) =
+  stmt e o@(NmOp fc x xs) =
     case integerArith o of
       Just n  => pure . assign e $ EPrimVal (BI n)
       Nothing => do
         (mbxs, args) <- liftArgsVect xs
-        pure . prepend mbxs $ assign e (EOp x args)
+        pure . prepend mbxs $ assign e (EOp fc x args)
 
   stmt e (NmExtPrim _ n xs) = do
     (mbxs, args) <- liftArgs xs
     pure . prepend mbxs $ assign e (EExtPrim n args)
 
-  stmt e (NmForce _ _ x) = do
+  stmt e (NmForce fc _ x) = do
     (mbx, vx) <- liftFun x
-    pure . prepend mbx $ assign e (EApp vx [])
+    pure . prepend mbx $ assign e (EApp fc vx [])
 
-  stmt e (NmDelay _ _ x) = assign e . ELam [] <$> stmt Returns x
+  stmt e (NmDelay fc _ x) = assign e . ELam fc [] <$> stmt Returns x
 
   -- No need for a `switch` if we only have a single branch.
   -- It's still necessary to lift the scrutinee, however,
