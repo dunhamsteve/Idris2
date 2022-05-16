@@ -46,6 +46,8 @@ compileExpr c s tmpDir outputDir tm outfile =
   do es <- compileToNode c s tm
      let out = outputDir </> outfile
      Core.writeFile out es
+     let mapOut = outputDir </> outfile ++ ".map"
+     Core.writeFile mapOut sym
      pure (Just out)
 
 ||| Node implementation of the `executeExpr` interface.

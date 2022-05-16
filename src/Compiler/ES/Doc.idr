@@ -1,5 +1,6 @@
 module Compiler.ES.Doc
 
+import Core.FC
 import Data.List
 
 infixl 8 <++>, <?>
@@ -13,6 +14,7 @@ data Doc
   | Text String
   | Nest Nat Doc
   | Seq Doc Doc
+  | Ann FC Doc
 
 export
 Semigroup Doc where
@@ -45,6 +47,7 @@ isMultiline (Text x)   = False
 isMultiline (Comment x) = isMultiline x
 isMultiline (Nest k x) = isMultiline x
 isMultiline (Seq x y)  = isMultiline x || isMultiline y
+isMultiline (Ann _ x)  = isMultiline x
 
 export
 (<++>) : Doc -> Doc -> Doc
@@ -53,6 +56,10 @@ a <++> b = a <+> " " <+> b
 export
 vcat : List Doc -> Doc
 vcat = concat . intersperse LineBreak
+
+export
+vcat' : List Doc -> Doc
+vcat' = vcat . filter (\case Nil => False; _ => True)
 
 export
 hcat : List Doc -> Doc
@@ -97,6 +104,7 @@ compact = fastConcat . go
         go (Text x)   = [x]
         go (Nest _ y) = go y
         go (Seq x y)  = go x ++ go y
+        go (Ann _ x)  = go x
 
 export
 pretty : Doc -> String
@@ -112,3 +120,6 @@ pretty = fastConcat . go ""
         go _ (Text x)   = [x]
         go s (Nest x y) = go (s ++ nSpaces x) y
         go s (Seq x y)  = go s x ++ go s y
+        go s (Ann fc x)  = go s x
+        -- For debug
+        -- go s (Ann fc x)  = ["/*", show fc, "*/"] ++ go s x
