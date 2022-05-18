@@ -2,6 +2,7 @@
 module Compiler.ES.Javascript
 
 import Compiler.ES.Codegen
+import Compiler.ES.SourceMap
 
 import Compiler.Common
 

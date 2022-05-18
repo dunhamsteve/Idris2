@@ -2,23 +2,26 @@ module Compiler.ES.SourceMap
 
 import Compiler.ES.Doc
 import Libraries.Data.SortedMap
+import Libraries.Utils.Path
 import Protocol.Hex
 import Data.Bits
 import Data.List
 import Data.SnocList
 import Data.String
 import Data.Vect
+import Core.Context
+import Core.Directory
 import Core.FC
 import Core.Name.Namespace
+import Core.Options
 import Control.Monad.State
 
+export
 record SourceMap where
     constructor MkSourceMap
-    -- verison: 3
-    -- names: []
-    -- file: String
+    segments : SnocList String
     sourceIx : Int
-    sources: SortedMap String Int
+    sourceMap: SortedMap ModuleIdent Int
     -- these get concatenated at the end
     pos : FilePos
     mappings: SnocList Char
@@ -26,7 +29,8 @@ record SourceMap where
     prev : Vect 4 Int
     line : Maybe Int
 
-
+start : SourceMap
+start = MkSourceMap Lin 0 empty (0,0) Lin [0,0,0,0] Nothing
 
 
 pushChar : Char -> State SourceMap ()
@@ -54,11 +58,6 @@ encode n = if n < 0 then go ((0-n)*2 + 1) else go (n*2)
                 let ch = base64 (n .&. 31)
                 pushChar ch
 
-start : SourceMap
-start = MkSourceMap 0 empty (0,0) Lin [0,0,0,0] Nothing
-
--- We need a small test case
-
 -- Convert an Idris2 string to a JSON String
 -- by escaping most non-alphanumeric characters.
 -- Adapted from Compiler.ES.Codegen.jsString
@@ -67,15 +66,15 @@ jsonString s = Text $ "\"" ++ (concatMap okchar (unpack s)) ++ "\""
   where
     okchar : Char -> String
     okchar c = if (c >= ' ') && (c /= '\\')
-                  && (c /= '"') && (c /= '\'') && (c <= '~')
+                  && (c /= '"') && (c <= '~')
                   then cast c
                   else case c of
                             '\0' => "\\0"
-                            '\'' => "\\'"
                             '"' => "\\\""
                             '\r' => "\\r"
                             '\n' => "\\n"
-                            other => "\\u{" ++ asHex (cast c) ++ "}"
+                            '\\' => "\\\\"
+                            other => "\\u" ++ leftPad '0' 4 (asHex $ cast c)
 
 field : (String, Doc) -> Doc
 field (key, value) = jsonString key <+> softColon <+> value
@@ -91,17 +90,7 @@ array = applyList "[" "]" softComma
 
 sourceList : SourceMap -> List String
 sourceList smap =
-    map fst $ sortBy (\(_,a),(_,b) => compare a b) $ SortedMap.toList smap.sources
-
-showJSON : SourceMap -> String -> Doc
-showJSON smap filename =
-    object [
-        ("version", "3"),
-        ("names", "[]"),
-        ("file", jsonString filename),
-        ("sources", array (map jsonString $ sourceList smap)),
-        ("mappings", jsonString $ fastPack $ smap.mappings <>> [])
-    ]
+    map (\x => toPath (fst x) ++ ".idr") $ sortBy (\(_,a),(_,b) => compare a b) $ SortedMap.toList smap.sourceMap
 
 -- "lines" loses the trailing newlines, but that should be ok for us
 ||| Turn a file into an annotated Doc to enable
@@ -116,75 +105,147 @@ fileToDoc fn text = go 0 (lines text)
         go n [] = []
         go n (x :: xs) = Seq (Ann (fc n) (Text x)) (go (n+1) xs)
 
-Semigroup FilePos where
-    (l,c) <+> (0,c')  = (l, c + c')
-    (l,c) <+> (l',c') = (l + l', c')
+(<++>) : FilePos -> FilePos -> FilePos
+(l,c) <++> (0,c')  = (l, c + c')
+(l,c) <++> (l',c') = (l + l', c')
 
-addPos : FilePos -> State SourceMap ()
-addPos p = modify { pos $= (<+> p) }
 
-fileNum : String -> State SourceMap Int
-fileNum fn = ST $ \st => case lookup fn st.sources of
+||| Add a file to the list of sources if necessary and return its index
+fileNum : ModuleIdent -> State SourceMap Int
+fileNum fn = ST $ \st => case lookup fn st.sourceMap of
     Nothing =>
-        let st' = { sources $= (insert fn st.sourceIx), sourceIx $= (+1) } st
-        in pure (st', st.sourceIx)
+        let ix = st.sourceIx
+            st' = { sourceMap $= (insert fn ix), sourceIx := (ix+1) } st
+        in pure (st', ix)
     (Just x) => pure (st,x)
 
-addMark : String -> FilePos -> State SourceMap ()
+||| Add a mark for filePos to mappings and update the state.
+addMark : ModuleIdent -> FilePos -> State SourceMap ()
 addMark fn (srcLine, srcCol) = do
     ix <- fileNum fn
     st <- get
     let (destLine, destCol) = st.pos
         skip = destLine - (fromMaybe 0 st.line)
 
+    -- Marks on the same line are separated by ,
     when (Just destLine == st.line) (pushChar ',')
+
+-- Lines are separated by ;
     when (skip > 0) $ traverse_ pushChar $ List.replicate (cast skip) ';'
 
-    -- emit st.pos.fst - st.line semicolons
-    -- or a comma if st.line == Just st.pos.fst
     let [destCol', ix', srcLine', srcCol'] = st.prev
-    if skip > 0 then encode (destCol + 1) else encode (destCol - destCol')
-    encode $ ix - ix'
-    encode $ srcLine - srcLine'
-    encode $ srcCol + 1  - srcCol'
+
+    -- column in output javascript is delta encoded, but reset on new line
+    if skip > 0 then encode destCol else encode (destCol - destCol')
 
     let next = the (Vect 4 Int) [destCol, ix, srcLine, srcCol]
-    modify { prev := next, line := Just destLine }
 
-
-
+    -- skip if same as previous
+    if skip == 0 && next == st.prev then pure ()
+        else do
+            -- otherwise delta-encode
+            encode $ ix - ix'
+            encode $ srcLine - srcLine'
+            encode $ srcCol - srcCol'
+            modify { prev := next, line := Just destLine }
 
 -- REVIEW maybe change State SourceMap () to a Core thinger
 -- It's just a Ref, maybe even more complex than State which
 -- is contained in prettyMap
 
--- REVIEW do we want to mark none for unknown?
+||| Emit a source reference for the current output position
 emit : FC -> State SourceMap ()
-emit (MkFC d s e) = case d of
-    (PhysicalIdrSrc mod) => addMark (toPath mod ++ ".idr") s
-    (PhysicalPkgSrc fname) => addMark fname s
-    (Virtual ident) => modify id
-emit (MkVirtualFC d s e) = case d of
-    (PhysicalIdrSrc mod) => addMark (toPath mod ++ ".idr") s
-    (PhysicalPkgSrc fname) => addMark fname s
-    (Virtual ident) => modify id
-emit EmptyFC = modify id
+emit (MkFC (PhysicalIdrSrc mod) s e) = addMark mod s
+-- REVIEW whether these are wanted in sourcemap
+-- emit (MkVirtualFC (PhysicalIdrSrc mod) s e) = addMark mod s
+emit _ = pure ()
+
+
+try : Core a -> Core (Maybe a)
+try x = catch (Just <$> x) (const $ pure Nothing)
+
+||| Read the source of a module (logic adapted from idris2-lsp mkLocation')
+readSource : Ref Ctxt Defs => ModuleIdent -> Core (String, Maybe String)
+readSource mi = do
+    defs <- get Ctxt
+    let pkg_dirs = filter (/= ".") defs.options.dirs.extra_dirs
+
+    source <- catch (Just <$> (nsToSource EmptyFC mi >>= readFile))
+        (const $ do
+            defs <- get Ctxt
+            let pkg_dirs = filter (/= ".") defs.options.dirs.extra_dirs
+                candidates = map (</> toPath mi <.> "idr") pkg_dirs
+            Just cand <- firstAvailable candidates | _ => pure Nothing
+            Just <$> readFile cand)
+
+    when (isNothing source) (coreLift $ putStrLn "miss \{show mi}")
+    pure (toPath mi ++ ".idr", source)
+
+listMods : SourceMap -> List ModuleIdent
+listMods smap = map fst $ sortBy (\(_,a),(_,b) => compare a b) $ SortedMap.toList smap.sourceMap
+
+maybeJsonString : Maybe String -> Doc
+maybeJsonString Nothing = Text "null"
+maybeJsonString (Just x) = jsonString x
+
+export
+showJSON : Ref Ctxt Defs => SourceMap -> String -> Core String
+showJSON smap filename = do
+    sourceInfo <- traverse readSource $ listMods smap
+    -- pure $ { sources := map fst foo, sourcesContent := map snd foo} smap
+    d <- getDirs
+    -- coreLift $ printLn d
+
+    pure $ pretty $ object [
+        ("version", "3"),
+        ("names", "[]"),
+        ("file", jsonString filename),
+        ("sources", array $ map (jsonString . fst) sourceInfo),
+        ("sourcesContent", array $ map (maybeJsonString . snd) sourceInfo),
+        ("mappings", jsonString $ fastPack $ smap.mappings <>> [])
+    ]
+
+
+export
+showJavascript : SourceMap -> String -> String
+showJavascript smap fn = fastConcat $ smap.segments <>> ["\n//# SourceMappingURL=", fn, ".map\n"]
+
+addPos : FilePos -> State SourceMap ()
+addPos p = modify { pos $= (<++> p) }
+
+nSpaces : Nat -> String
+nSpaces n = fastPack $ replicate n ' '
+
+addText : String -> State SourceMap ()
+addText s = modify { pos $= (<++> (0,strLength s)), segments $= (:< s)}
+
+addNewLine : Nat -> State SourceMap ()
+addNewLine n = let text : String = "\n" ++ nSpaces n in
+    modify { pos $= (<++> (1,cast n)), segments $= (:< text) }
 
 
 ||| like pretty, but build a sourceMap
 ||| FIXME I'm not super happy with this because it needs
 ||| to match the behavior of pretty to be correct.
 export
-prettyMap : Doc -> String -> String
-prettyMap doc fn =
-    pretty $ showJSON (execState start $ go 0 doc) fn
+prettyMap : Ref Ctxt Defs => Doc -> SourceMap
+prettyMap doc =
+    execState start $ go 0 doc
     where
         go : (spaces : Nat) -> Doc -> State SourceMap ()
         go n [] = pure ()
-        go n LineBreak = addPos (1,0)
-        go n SoftSpace = addPos (0,1)
-        go n (Text x) = addPos (0, strLength x)
+        go n LineBreak = addNewLine n
+        go n SoftSpace = addText " "
+        go n (Text x) = addText x
         go n (Nest k x) = go (n+k) x
         go n (Seq x y) = go n x >> go n y
-        go n (Ann fc x) = emit fc >> go n x
-
+        -- go n (Ann fc x) = emit fc >> go n x
+        -- DEBUG
+        go n (Ann fc x) = do
+            -- These three are for debugging
+            -- leading space for when there is a / preceeding the comment
+            addText " /*"
+            addText (show fc)
+            addText "*/"
+            emit fc
+            go n x

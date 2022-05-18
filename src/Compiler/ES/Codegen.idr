@@ -818,7 +818,7 @@ compileToES c s cg tm ccTypes = do
 
       -- tail-call optimized set of toplevel functions
       defs    = TailRec.functions tailRec allDefs
--- FIXME need to concat with LineBreak
+
   -- pretty printed toplevel function definitions
   defDecls <- vcat' <$> traverse def defs
 
@@ -837,16 +837,12 @@ compileToES c s cg tm ccTypes = do
 
   st <- get ESs
 
-  -- FIXME - we need to split out linebreaks from these static chunks
-
   -- main preamble containing primops implementations
-  -- REVIEW - is this worth it or just leave the lines unattributed with
-  -- vcat . map Text . lines ??
   support <- vcat . map Text . lines <$> readDataFile ("js/support.js")
 
   -- complete preamble, including content from additional
   -- support files (if any)
-  -- REVIEW - maybe need to split preamble st, what are the keys...
   let pre = vcat $ map Text $ concatMap lines (values $ preamble st)
-  let all = vcat [support, pre, allDecls, Text main]
-  pure $ (printDoc mode all, prettyMap all "out.js")  -- [pre,allDecls,main]
+  let all = vcat [support, pre, LineBreak, allDecls, Text main]
+
+  pure $ (printDoc mode all, prettyMap all)  -- [pre,allDecls,main]

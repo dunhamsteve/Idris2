@@ -5,6 +5,7 @@ import Idris.Env
 import Idris.Syntax
 
 import Compiler.ES.Codegen
+import Compiler.ES.SourceMap
 
 import Compiler.Common
 
@@ -45,9 +46,10 @@ compileExpr :
 compileExpr c s tmpDir outputDir tm outfile =
   do es <- compileToNode c s tm
      let out = outputDir </> outfile
-     Core.writeFile out es
+     Core.writeFile out $ showJavascript sym outfile
      let mapOut = outputDir </> outfile ++ ".map"
-     Core.writeFile mapOut sym
+     sourceMap <- showJSON sym outfile
+     Core.writeFile mapOut sourceMap
      pure (Just out)
 
 ||| Node implementation of the `executeExpr` interface.
