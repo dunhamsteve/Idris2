@@ -4,6 +4,7 @@ module Compiler.ES.Node
 import Idris.Env
 
 import Compiler.ES.Codegen
+import Compiler.ES.SourceMap
 
 import Compiler.Common
 
@@ -26,7 +27,7 @@ findNode = do
    pure $ fromMaybe "/usr/bin/env node" path
 
 ||| Compile a TT expression to Node
-compileToNode : Ref Ctxt Defs -> ClosedTerm -> Core (String, String)
+compileToNode : Ref Ctxt Defs -> ClosedTerm -> Core (String, SourceMap)
 compileToNode c tm = compileToES c Node tm ["node", "javascript"]
 
 ||| Node implementation of the `compileExpr` interface.
@@ -39,9 +40,10 @@ compileExpr :  Ref Ctxt Defs
 compileExpr c tmpDir outputDir tm outfile =
   do (es, sym) <- compileToNode c tm
      let out = outputDir </> outfile
-     Core.writeFile out es
+     Core.writeFile out $ showJavascript sym outfile
      let mapOut = outputDir </> outfile ++ ".map"
-     Core.writeFile mapOut sym
+     sourceMap <- showJSON sym outfile
+     Core.writeFile mapOut sourceMap
      pure (Just out)
 
 ||| Node implementation of the `executeExpr` interface.

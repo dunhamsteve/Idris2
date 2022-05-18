@@ -113,5 +113,3 @@ pretty = fastConcat . go ""
         go s (Nest x y) = go (s ++ nSpaces x) y
         go s (Seq x y)  = go s x ++ go s y
         go s (Ann fc x)  = go s x
-        -- For debug
-        -- go s (Ann fc x)  = ["/*", show fc, "*/"] ++ go s x

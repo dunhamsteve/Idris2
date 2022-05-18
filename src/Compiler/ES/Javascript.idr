@@ -2,6 +2,7 @@
 module Compiler.ES.Javascript
 
 import Compiler.ES.Codegen
+import Compiler.ES.SourceMap
 
 import Compiler.Common
 
@@ -16,7 +17,7 @@ import Data.String
 
 ||| Compile a TT expression to Javascript
 compileToJS : Ref Ctxt Defs ->
-              ClosedTerm -> Core (String, String)
+              ClosedTerm -> Core (String, SourceMap)
 compileToJS c tm = compileToES c Javascript tm ["browser", "javascript"]
 
 htmlHeader : String
