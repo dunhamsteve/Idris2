@@ -3,46 +3,36 @@
 <head><title>Data.Bits</title>
   <meta charset="utf-8">
   <style>
-      .IdrisData {
-      
-      color: darkred
-    }
-    .IdrisType {
-      
-      color: blue
-    }
-    .IdrisBound {
-      
-      color: black
-    }
-    .IdrisFunction {
-      
-      color: darkgreen
-    }
-    .IdrisKeyword {
-      text-decoration: underline;
-      color: 
-    }
-    .IdrisImplicit {
-      
-      color: black
-    }
-    .IdrisComment {
-      
-      color: #b22222
-    }
-    .IdrisNamespace {
-      font-style: italic;
-      color: black
-    }
-    .IdrisPostulate {
-      font-weight: bold;
-      color: red
-    }
-    .IdrisModule {
-      font-style: italic;
-      color: black
-    }
+  .IdrisData {
+  color: darkred
+}
+.IdrisType {
+  color: blue
+}
+.IdrisBound {
+  color: black
+}
+.IdrisFunction {
+  color: darkgreen
+}
+.IdrisKeyword {
+  text-decoration: underline;
+}
+.IdrisComment {
+  color: #b22222
+}
+.IdrisNamespace {
+  font-style: italic;
+  color: black
+}
+.IdrisPostulate {
+  font-weight: bold;
+  color: red
+}
+.IdrisModule {
+  font-style: italic;
+  color: black
+}
 
   .IdrisLineNumber {
     text-decoration: none;
@@ -127,7 +117,7 @@
   </script>
 </head>
 <body onload="initialize()">
-<code>
+<code class="IdrisCode">
 <div id="line0"><a href="#line0" class="IdrisLineNumber"> &nbsp;&nbsp;0 | </a><span class="IdrisKeyword">module</span>&nbsp;<span class="IdrisModule">Data.Bits</span></div>
 <div id="line1"><a href="#line1" class="IdrisLineNumber"> &nbsp;&nbsp;1 | </a></div>
 <div id="line2"><a href="#line2" class="IdrisLineNumber"> &nbsp;&nbsp;2 | </a><span class="IdrisKeyword">import</span>&nbsp;<span class="IdrisKeyword">public</span>&nbsp;<span class="IdrisModule">Data.Fin</span></div>
@@ -387,7 +377,7 @@
 <div id="line256"><a href="#line256" class="IdrisLineNumber"> 256 | </a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="IdrisKeyword">((</span><span class="IdrisBound">x0</span>&nbsp;<span class="IdrisFunction">`shiftR`</span>&nbsp;<span class="IdrisData">1</span><span class="IdrisKeyword">)</span>&nbsp;<span class="IdrisFunction">.&amp;.</span>&nbsp;<span class="IdrisData">0x5555555555555555</span><span class="IdrisKeyword">)</span></div>
 <div id="line257"><a href="#line257" class="IdrisLineNumber"> 257 | </a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="IdrisBound">x2</span>&nbsp;<span class="IdrisKeyword">=</span>&nbsp;<span class="IdrisKeyword">(</span><span class="IdrisBound">x1</span>&nbsp;<span class="IdrisFunction">.&amp;.</span>&nbsp;<span class="IdrisData">0x3333333333333333</span><span class="IdrisKeyword">)</span></div>
 <div id="line258"><a href="#line258" class="IdrisLineNumber"> 258 | </a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="IdrisFunction">+</span>&nbsp;<span class="IdrisKeyword">((</span><span class="IdrisBound">x1</span>&nbsp;<span class="IdrisFunction">`shiftR`</span>&nbsp;<span class="IdrisData">2</span><span class="IdrisKeyword">)</span>&nbsp;<span class="IdrisFunction">.&amp;.</span>&nbsp;<span class="IdrisData">0x3333333333333333</span><span class="IdrisKeyword">)</span></div>
-<div id="line259"><a href="#line259" class="IdrisLineNumber"> 259 | </a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="IdrisBound">x3</span>&nbsp;<span class="IdrisKeyword">=</span>&nbsp;<span class="IdrisKeyword">((</span><span class="IdrisBound">x2</span>&nbsp;<span class="IdrisFunction">+</span>&nbsp;<span class="IdrisKeyword">(</span><span class="IdrisBound">x2</span>&nbsp;<span class="IdrisFunction">`shiftR`</span>&nbsp;<span class="IdrisData">4</span><span class="IdrisKeyword">))</span>&nbsp;<span class="IdrisFunction">.&amp;.</span>&nbsp;<span class="IdrisData">0x0F0F0F0F</span><span class="IdrisKeyword">)</span></div>
+<div id="line259"><a href="#line259" class="IdrisLineNumber"> 259 | </a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="IdrisBound">x3</span>&nbsp;<span class="IdrisKeyword">=</span>&nbsp;<span class="IdrisKeyword">((</span><span class="IdrisBound">x2</span>&nbsp;<span class="IdrisFunction">+</span>&nbsp;<span class="IdrisKeyword">(</span><span class="IdrisBound">x2</span>&nbsp;<span class="IdrisFunction">`shiftR`</span>&nbsp;<span class="IdrisData">4</span><span class="IdrisKeyword">))</span>&nbsp;<span class="IdrisFunction">.&amp;.</span>&nbsp;<span class="IdrisData">0x0F0F0F0F0F0F0F0F</span><span class="IdrisKeyword">)</span></div>
 <div id="line260"><a href="#line260" class="IdrisLineNumber"> 260 | </a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="IdrisBound">x4</span>&nbsp;<span class="IdrisKeyword">=</span>&nbsp;<span class="IdrisKeyword">(</span><span class="IdrisBound">x3</span>&nbsp;<span class="IdrisFunction">*</span>&nbsp;<span class="IdrisData">0x0101010101010101</span><span class="IdrisKeyword">)</span>&nbsp;<span class="IdrisFunction">`shiftR`</span>&nbsp;<span class="IdrisData">56</span></div>
 <div id="line261"><a href="#line261" class="IdrisLineNumber"> 261 | </a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="IdrisKeyword">in</span>&nbsp;<span class="IdrisFunction">cast</span>&nbsp;<span class="IdrisBound">x4</span></div>
 <div id="line262"><a href="#line262" class="IdrisLineNumber"> 262 | </a></div>
