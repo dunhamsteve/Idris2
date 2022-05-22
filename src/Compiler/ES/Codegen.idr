@@ -70,7 +70,7 @@ jsIdent s = concatMap okchar (unpack s)
     okchar '_' = "_"
     okchar c = if isAlphaNum c
                   then cast c
-                  else "x" ++ asHex (cast c)
+                  else "$" ++ asHex (cast c)
 
 jsReservedNames : List String
 jsReservedNames =
