@@ -17,7 +17,6 @@ export
 extend : (x : Name) -> Binder (tm vars) -> Env tm vars -> Env tm (x :: vars)
 extend x = (::) {x}
 
-
 export
 length : Env tm xs -> Nat
 length [] = 0
@@ -28,6 +27,12 @@ lengthNoLet : Env tm xs -> Nat
 lengthNoLet [] = 0
 lengthNoLet (Let _ _ _ _ :: xs) = lengthNoLet xs
 lengthNoLet (_ :: xs) = S (lengthNoLet xs)
+
+export
+lengthExplicitPi : Env tm xs -> Nat
+lengthExplicitPi [] = 0
+lengthExplicitPi (Pi _ _ Explicit _ :: rho) = S (lengthExplicitPi rho)
+lengthExplicitPi (_ :: rho) = lengthExplicitPi rho
 
 export
 namesNoLet : {xs : _} -> Env tm xs -> List Name
