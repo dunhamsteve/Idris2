@@ -5,6 +5,8 @@ import Libraries.Data.SortedMap
 import Libraries.Utils.Path
 import Protocol.Hex
 import Data.Bits
+-- A compiler used by the quickcheck build seems to need this
+import Data.DPair
 import Data.List
 import Data.SnocList
 import Data.String
