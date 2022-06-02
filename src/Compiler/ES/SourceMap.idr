@@ -55,7 +55,7 @@ encode n = if n < 0 then go ((0-n)*2 + 1) else go (n*2)
             then do
                 let ch = base64 (n .&. 31 .|. 32)
                 pushChar ch
-                go (shiftR n 5)
+                go (n `div` 32)
             else do
                 let ch = base64 (n .&. 31)
                 pushChar ch
