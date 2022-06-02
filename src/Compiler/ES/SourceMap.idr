@@ -246,8 +246,8 @@ prettyMap doc =
         go n (Ann fc x) = do
             -- These three are for debugging
             -- leading space for when there is a / preceeding the comment
-            addText " /*"
-            addText (show fc)
-            addText "*/"
+            -- addText " /*"
+            -- addText (show fc)
+            -- addText "*/"
             emit fc
             go n x
