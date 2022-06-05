@@ -1,5 +1,7 @@
 module Compiler.ES.SourceMap
 
+-- I've found https://sokra.github.io/source-map-visualization/#custom helpful for visualizing results.
+
 import Compiler.ES.Doc
 import Libraries.Data.SortedMap
 import Libraries.Utils.Path
@@ -140,7 +142,7 @@ addMark fn (srcLine, srcCol) = do
     -- column in output javascript is delta encoded, but reset on new line
     if skip > 0 then encode destCol else encode (destCol - destCol')
 
-    let next = the (Vect 4 Int) [destCol, ix, srcLine, srcCol]
+    let next : Vect 4 Int = [destCol, ix, srcLine, srcCol]
 
     -- skip if same as previous
     if skip == 0 && next == st.prev then pure ()
@@ -225,6 +227,33 @@ addNewLine : Nat -> State SourceMap ()
 addNewLine n = let text : String = "\n" ++ nSpaces n in
     modify { pos $= (<++> (1,cast n)), segments $= (:< text) }
 
+||| debugFC is used to inject FC comments when debugging
+||| the sourcemap generation
+debugFC : FC -> State SourceMap ()
+debugFC fc = do
+    addText " /*"
+    case fc of
+        (MkVirtualFC _ _ _) => addText "V:"
+        _ => pure ()
+    addText (show fc)
+    addText "*/"
+
+export
+compactMap :  Ref Ctxt Defs => Doc -> SourceMap
+compactMap doc =
+    execState start $ go doc
+    where
+        go : Doc -> State SourceMap ()
+        go Nil        = pure ()
+        go LineBreak  = pure ()
+        go SoftSpace  = pure ()
+        go (Text x)   = addText x
+        go (Nest k x) = go x
+        go (Seq x y)  = go x >> go y
+        go (Ann fc x) = do
+            -- debugFC fc
+            emit fc
+            go x
 
 ||| like pretty, but build a sourceMap
 ||| FIXME I'm not super happy with this because it needs
@@ -235,19 +264,14 @@ prettyMap doc =
     execState start $ go 0 doc
     where
         go : (spaces : Nat) -> Doc -> State SourceMap ()
-        go n [] = pure ()
-        go n LineBreak = addNewLine n
-        go n SoftSpace = addText " "
-        go n (Text x) = addText x
+        go n Nil        = pure ()
+        go n LineBreak  = addNewLine n
+        go n SoftSpace  = addText " "
+        go n (Text x)   = addText x
         go n (Nest k x) = go (n+k) x
-        go n (Seq x y) = go n x >> go n y
+        go n (Seq x y)  = go n x >> go n y
         -- go n (Ann fc x) = emit fc >> go n x
-        -- DEBUG
         go n (Ann fc x) = do
-            -- These three are for debugging
-            -- leading space for when there is a / preceeding the comment
-            -- addText " /*"
-            -- addText (show fc)
-            -- addText "*/"
+            -- debugFC fc
             emit fc
             go n x

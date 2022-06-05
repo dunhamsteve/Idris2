@@ -46,10 +46,14 @@ compileExpr :
 compileExpr c s tmpDir outputDir tm outfile =
   do es <- compileToNode c s tm
      let out = outputDir </> outfile
-     Core.writeFile out $ showJavascript sym outfile
-     let mapOut = outputDir </> outfile ++ ".map"
-     sourceMap <- showJSON sym outfile
-     Core.writeFile mapOut sourceMap
+     case result of
+        Left sourceMap => do
+            Core.writeFile out $ showJavascript sourceMap outfile
+            let mapOut = outputDir </> outfile ++ ".map"
+            smap <- showJSON sourceMap outfile
+            Core.writeFile mapOut smap
+        Right js =>
+            Core.writeFile out js
      pure (Just out)
 
 ||| Node implementation of the `executeExpr` interface.

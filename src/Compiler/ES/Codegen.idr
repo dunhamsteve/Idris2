@@ -843,6 +843,8 @@ compileToES c s cg tm ccTypes = do
   -- complete preamble, including content from additional
   -- support files (if any)
   let pre = vcat $ map Text $ concatMap lines (values $ preamble st)
-  let all = vcat [support, pre, LineBreak, allDecls, Text main]
+  let all = vcat [support, LineBreak, pre, LineBreak, allDecls, Text main]
 
-  pure $ (printDoc mode all, prettyMap all)  -- [pre,allDecls,main]
+  if "sourcemap" `elem` directives
+    then pure $ Left  $ prettyMap all
+    else pure $ Right $ printDoc mode all
