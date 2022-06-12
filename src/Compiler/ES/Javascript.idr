@@ -63,6 +63,12 @@ compileExpr c s tmpDir outputDir tm outfile =
      let res = addHeaderAndFooter outfile es
      let out = outputDir </> outfile
      Core.writeFile out res
+     case result of
+        Left sourceMap => do
+            let mapOut = outputDir </> outfile ++ ".map"
+            smap <- showJSON sourceMap outfile
+            Core.writeFile mapOut smap
+        Right js => pure ()
      pure (Just out)
 
 ||| Node implementation of the `executeExpr` interface.
