@@ -581,3 +581,7 @@
   (symbol->string sym))
 
 (define (blodwen-id x) x)
+
+(define (blodwen-collect)
+  (collect)
+  (bytes-allocated))

@@ -57,11 +57,19 @@ export
 usleep : HasIO io => (usec : Int) -> So (usec >= 0) => io ()
 usleep usec = primIO (prim__usleep usec)
 
+
 -- Get the number of arguments
 %foreign "scheme:blodwen-arg-count"
          supportC "idris2_getArgCount"
          "node:lambda:() => process.argv.length"
 prim__getArgCount : PrimIO Int
+
+%foreign "scheme:blodwen-collect"
+prim_collect : PrimIO Int
+
+export
+garbageCollect : HasIO io => io (Int)
+garbageCollect = primIO prim_collect
 
 -- Get argument number `n`
 %foreign "scheme:blodwen-arg"

@@ -587,6 +587,7 @@ data REPLCmd : Type where
      Compile : PTerm -> String -> REPLCmd
      Exec : PTerm -> REPLCmd
      Help : REPLCmd
+     GarbageCollect : REPLCmd
      TypeSearch : PTerm -> REPLCmd
      FuzzyTypeSearch : PTerm -> REPLCmd
      DebugInfo : Name -> REPLCmd

@@ -2374,6 +2374,7 @@ parserCommandsForHelp =
   , noArgCmd (ParseREPLCmd ["gdnext"]) (Editing GenerateDefNext) "Show next definition"
   , noArgCmd (ParseREPLCmd ["version"]) ShowVersion "Display the Idris version"
   , noArgCmd (ParseREPLCmd ["?", "h", "help"]) Help "Display this help text"
+  , noArgCmd (ParseREPLCmd ["gc"]) GarbageCollect "Garbage collect"
   , declsArgCmd (ParseKeywordCmd "let") NewDefn "Define a new value"
   , exprArgCmd (ParseREPLCmd ["fs", "fsearch"]) FuzzyTypeSearch "Search for global definitions by sketching the names distribution of the wanted type(s)."
   ]

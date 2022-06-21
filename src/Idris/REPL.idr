@@ -974,6 +974,9 @@ process (Exec ctm)
     = execExp ctm
 process Help
     = pure RequestedHelp
+process GarbageCollect
+    = do size <- coreLift garbageCollect
+         pure $ PrintedDoc $ pretty0 "Memory Size \{show size}"
 process (TypeSearch searchTerm)
     = do defs <- branch
          let curr = currentNS defs
