@@ -109,7 +109,7 @@ jobs:
       # Build the current version and save the installation.
       - name: Build current version
         run: |
-          make && make install
+          make clean && make && make install
       - name: Artifact Idris2 from previous version
         uses: actions/upload-artifact@v2
         with:
