@@ -29,6 +29,13 @@ libc fn = "C:" ++ fn ++ ", libc 6"
 -- `sleep` and `usleep` need to be tied to `blodwen-[u]sleep` for threading
 -- reasons (see support/racket/support.rkt)
 
+%foreign "scheme,chez:print-stack-trace"
+prim__stackTrace : String -> Int -> PrimIO ()
+
+export
+stackTrace : HasIO io => String -> Int -> io ()
+stackTrace msg depth = primIO $ prim__stackTrace msg depth
+
 %foreign "scheme,racket:blodwen-sleep"
          supportC "idris2_sleep"
 prim__sleep : Int -> PrimIO ()

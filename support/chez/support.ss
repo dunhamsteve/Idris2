@@ -8,6 +8,20 @@
     [(i3nt ti3nt a6nt ta6nt) "windows"]
     [else "unknown"]))
 
+(define (print-stack-trace obj max-depth)
+	(call/cc (lambda (k)
+		(slog (format "backtrace of [~a]:" obj))
+		(let loop ((cur (inspect/object k)) (i 0))
+		     (if (and (> (cur 'depth) 1) (< i max-depth))
+		         (begin
+			    (call-with-values
+			    	(lambda () (cur 'source-path))
+				(case-lambda
+					((file line char) (format "\tat ~a (~a:~a)" ((cur 'code) 'name) file line))
+					((file line) (format "\tat ~a (~a:~a)" ((cur 'code) 'name) file line))
+					(else (k))))
+			    (loop (cur 'link) (+ i 1))))))))
+
 (define blodwen-lazy
   (lambda (f)
     (let ([evaluated #f] [res void])
