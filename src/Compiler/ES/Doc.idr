@@ -12,9 +12,11 @@ data Doc
   | SoftSpace -- this will be ignored in compact printing
   | Comment Doc -- this will be ignored in compact printing
   | Text String
+  | NLText String -- contains newlines, for support.js
   | Nest Nat Doc
   | Seq Doc Doc
   | Ann FC Doc
+
 
 export
 Semigroup Doc where
@@ -42,6 +44,7 @@ export
 isMultiline : Doc -> Bool
 isMultiline []         = False
 isMultiline LineBreak  = True
+isMultiline (NLText _)  = True
 isMultiline SoftSpace  = False
 isMultiline (Text x)   = False
 isMultiline (Comment x) = isMultiline x
@@ -102,6 +105,7 @@ compact = fastConcat . go
         go SoftSpace  = []
         go (Comment _) = []
         go (Text x)   = [x]
+        go (NLText x) = [x]
         go (Nest _ y) = go y
         go (Seq x y)  = go x ++ go y
         go (Ann _ x)  = go x
@@ -118,6 +122,7 @@ pretty = fastConcat . go ""
         go _ SoftSpace  = [" "]
         go s (Comment x) = "/* " :: go s x ++ [" */"]
         go _ (Text x)   = [x]
+        go _ (NLText x) = [x]
         go s (Nest x y) = go (s ++ nSpaces x) y
         go s (Seq x y)  = go s x ++ go s y
         go s (Ann fc x)  = go s x

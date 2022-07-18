@@ -223,6 +223,15 @@ nSpaces n = fastPack $ replicate n ' '
 addText : String -> State SourceMap ()
 addText s = modify { pos $= (<++> (0,strLength s)), segments $= (:< s)}
 
+-- Text with NL is a separate constructor so addText can be fast
+addNLText : String -> State SourceMap ()
+addNLText s = modify { pos $= (<++> size 0 0 (unpack s)), segments $= (:< s)}
+    where
+        size : Int -> Int -> List Char -> FilePos
+        size r c [] = (r,c)
+        size r c ('\n' :: xs) = size (r+1) 0 xs
+        size r c (_ :: xs) = size r (c + 1) xs
+
 addNewLine : Nat -> State SourceMap ()
 addNewLine n = let text : String = "\n" ++ nSpaces n in
     modify { pos $= (<++> (1,cast n)), segments $= (:< text) }
@@ -248,6 +257,7 @@ compactMap doc =
         go LineBreak  = pure ()
         go SoftSpace  = pure ()
         go (Text x)   = addText x
+        go (NLText x) = addNLText x
         go (Nest k x) = go x
         go (Seq x y)  = go x >> go y
         go (Ann fc x) = do
@@ -268,6 +278,7 @@ prettyMap doc =
         go n LineBreak  = addNewLine n
         go n SoftSpace  = addText " "
         go n (Text x)   = addText x
+        go n (NLText x) = addNLText x
         go n (Nest k x) = go (n+k) x
         go n (Seq x y)  = go n x >> go n y
         -- go n (Ann fc x) = emit fc >> go n x

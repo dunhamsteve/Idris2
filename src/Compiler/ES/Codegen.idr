@@ -838,11 +838,11 @@ compileToES c s cg tm ccTypes = do
   st <- get ESs
 
   -- main preamble containing primops implementations
-  support <- vcat . map Text . lines <$> readDataFile ("js/support.js")
+  support <- NLText <$> readDataFile ("js/support.js")
 
   -- complete preamble, including content from additional
   -- support files (if any)
-  let pre = vcat $ map Text $ concatMap lines (values $ preamble st)
+  let pre = NLText $ fastUnlines $ values $ preamble st
   let all = vcat [support, LineBreak, pre, LineBreak, allDecls, Text main]
 
   if "sourcemap" `elem` directives
