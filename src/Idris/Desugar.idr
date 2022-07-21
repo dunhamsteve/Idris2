@@ -818,8 +818,9 @@ mutual
            addDocStringNS ns (toRF n) doc
            syn <- get Syn
            pure (MkIField fc rig !(traverse (desugar AnyExpr ps) p )
-                          n !(bindTypeNames fc (usingImpl syn)
-                          ps !(desugar AnyExpr ps ty)))
+                          n (IBindHere fc (PI erased)
+                              !(bindTypeNames fc (usingImpl syn)
+                                ps !(desugar AnyExpr ps ty))))
         where
           toRF : Name -> Name
           toRF (UN (Basic n)) = UN (Field n)

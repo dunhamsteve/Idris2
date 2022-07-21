@@ -21,9 +21,9 @@ namespace OrdinaryDog
 record Other a where
   constructor MkOther
   {imp : String}
+  {0 b : Type}
   fieldA : a
   fieldB : b
-
 ------ Using new application syntax as sugar for data instantiation (be it data/record/interface) -------
 
 myDog : OrdinaryDog
@@ -52,17 +52,17 @@ same : MkDog {age = 2, name = "Rex", weight = 10} = (the OrdinaryDog $ MkDog "Re
 same = Refl
 
 namespace R1
-
   public export
   record R1 where
     constructor MkR
+    {0 a : Type}
     field : a
 
 namespace R2
-
   public export
   record R2 where
     constructor MkR
+    {0  a : Type}
     {auto field : a}
 
 r1 : R1 -- explicit fields access

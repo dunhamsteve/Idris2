@@ -15,6 +15,7 @@ record DVect a where
 
 record Person where
   constructor MkPerson
+  { 0 b : Type }
   name : String
   age, shoesize : Int
   some_fn : b -> b -- 'b' bound as an argument to MkPerson

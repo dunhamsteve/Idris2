@@ -1,18 +1,6 @@
 1/1: Building Fld (Fld.idr)
 Warning: We are about to implicitly bind the following lowercase names.
 You may be unintentionally shadowing the associated global definitions:
-  a is shadowing Main.R1.R1.a
-
-Fld:66:11--66:20
- 62 | 
- 63 |   public export
- 64 |   record R2 where
- 65 |     constructor MkR
- 66 |     {auto field : a}
-                ^^^^^^^^^
-
-Warning: We are about to implicitly bind the following lowercase names.
-You may be unintentionally shadowing the associated global definitions:
   a is shadowing Main.R2.R2.a, Main.R1.R1.a
 
 Fld:74:1--79:38
