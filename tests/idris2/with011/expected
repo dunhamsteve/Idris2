@@ -1,0 +1,11 @@
+1/1: Building WithImplicits (WithImplicits.idr)
+Error: Unsolved holes:
+Main.{_:3155} introduced at: 
+WithImplicits:9:26--9:49
+ 5 | test x ys with (ys)
+ 6 |     _ | [] = False
+ 7 |     _ | (y :: ys') with (decEq x y)
+ 8 |         _ | Yes prf = True
+ 9 |         _ | No contra = (test x (y :: ys') | ys')
+                              ^^^^^^^^^^^^^^^^^^^^^^^
+
