@@ -31,7 +31,10 @@ findNode = do
 compileToNode :
   Ref Ctxt Defs ->
   Ref Syn SyntaxInfo ->
-  ClosedTerm -> Core String
+  ClosedTerm ->
+  String ->
+  String ->
+  Core String
 compileToNode c s tm = compileToES c s Node tm ["node", "javascript"]
 
 ||| Node implementation of the `compileExpr` interface.
@@ -44,16 +47,9 @@ compileExpr :
   (outfile : String) ->
   Core (Maybe String)
 compileExpr c s tmpDir outputDir tm outfile =
-  do es <- compileToNode c s tm
+  do js <- compileToNode c s tm outputDir outfile
      let out = outputDir </> outfile
-     case result of
-        Left sourceMap => do
-            Core.writeFile out $ showJavascript sourceMap outfile
-            let mapOut = outputDir </> outfile ++ ".map"
-            smap <- showJSON sourceMap outfile
-            Core.writeFile mapOut smap
-        Right js =>
-            Core.writeFile out js
+     Core.writeFile out js
      pure (Just out)
 
 ||| Node implementation of the `executeExpr` interface.
@@ -63,7 +59,7 @@ executeExpr :
   (tmpDir : String) -> ClosedTerm -> Core ()
 executeExpr c s tmpDir tm =
   do let outn = tmpDir </> "_tmp_node.js"
-     js <- compileToNode c s tm
+     js <- compileToNode c s tm tmpDir "_tmp_node.js"
      Core.writeFile outn js
      node <- coreLift findNode
      quoted_node <- pure $ "\"" ++ node ++ "\"" -- Windows often have a space in the path.

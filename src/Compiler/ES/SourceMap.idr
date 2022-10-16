@@ -192,6 +192,7 @@ maybeJsonString : Maybe String -> Doc
 maybeJsonString Nothing = Text "null"
 maybeJsonString (Just x) = jsonString x
 
+||| Render sourceMap JSON, including original source code.
 export
 showJSON : Ref Ctxt Defs => SourceMap -> String -> Core String
 showJSON smap filename = do
@@ -256,6 +257,7 @@ compactMap doc =
         go Nil        = pure ()
         go LineBreak  = pure ()
         go SoftSpace  = pure ()
+        go (Comment x) = pure ()
         go (Text x)   = addText x
         go (NLText x) = addNLText x
         go (Nest k x) = go x
@@ -274,13 +276,14 @@ prettyMap doc =
     execState start $ go 0 doc
     where
         go : (spaces : Nat) -> Doc -> State SourceMap ()
-        go n Nil        = pure ()
-        go n LineBreak  = addNewLine n
-        go n SoftSpace  = addText " "
-        go n (Text x)   = addText x
-        go n (NLText x) = addNLText x
-        go n (Nest k x) = go (n+k) x
-        go n (Seq x y)  = go n x >> go n y
+        go n Nil         = pure ()
+        go n LineBreak   = addNewLine n
+        go n SoftSpace   = addText " "
+        go n (Text x)    = addText x
+        go n (NLText x)  = addNLText x
+        go s (Comment x) = addText "/* " >> go s x >> addText " */"
+        go n (Nest k x)  = go (n+k) x
+        go n (Seq x y)   = go n x >> go n y
         -- go n (Ann fc x) = emit fc >> go n x
         go n (Ann fc x) = do
             -- debugFC fc

@@ -20,6 +20,7 @@ import Compiler.NoMangle
 import Libraries.Data.SortedMap
 import Protocol.Hex
 import Libraries.Data.String.Extra
+import Libraries.Utils.Path
 
 import Idris.Pretty.Annotations
 import Idris.Syntax
@@ -753,11 +754,11 @@ def (MkFunction n as body) = do
   case args of
     -- zero argument toplevel functions are converted to
     -- lazily evaluated constants.
-    [] => pure $ printDoc mde $ vcat
+    [] => pure $ vcat
           [ cmt
           , constant (var !(get NoMangleMap) ref)
                ("__lazy(" <+> function neutral [] b <+> ")") ]
-    _  => pure $ printDoc mde $ vcat
+    _  => pure $ vcat
           [ cmt
           , function (var !(get NoMangleMap) ref)
                (map (var !(get NoMangleMap)) args) b ]
@@ -791,8 +792,8 @@ validJSName name =
 ||| backends to JS code.
 export
 compileToES : Ref Ctxt Defs -> Ref Syn SyntaxInfo ->
-              (cg : CG) -> ClosedTerm -> List String -> Core String
-compileToES c s cg tm ccTypes = do
+              (cg : CG) -> ClosedTerm -> List String -> String -> String -> Core String
+compileToES c s cg tm ccTypes outputDir fn = do
   _ <- initNoMangle ccTypes validJSName
 
   cdata <- getCompileDataWith ccTypes False Cases tm
@@ -846,5 +847,10 @@ compileToES c s cg tm ccTypes = do
   let all = vcat [support, LineBreak, pre, LineBreak, allDecls, Text main]
 
   if "sourcemap" `elem` directives
-    then pure $ Left  $ prettyMap all
-    else pure $ Right $ printDoc mode all
+    then do
+      let smap = prettyMap all
+      let js = showJavascript smap fn
+      mapFile <- showJSON smap fn
+      writeFile (outputDir </> fn ++ ".sourceMap") mapFile
+      pure js
+    else pure $ printDoc mode all

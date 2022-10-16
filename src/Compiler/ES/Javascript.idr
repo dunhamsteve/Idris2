@@ -21,7 +21,10 @@ import Data.String
 compileToJS :
   Ref Ctxt Defs ->
   Ref Syn SyntaxInfo ->
-  ClosedTerm -> Core String
+  ClosedTerm ->
+  String ->
+  String ->
+  Core String
 compileToJS c s tm = compileToES c s Javascript tm ["browser", "javascript"]
 
 htmlHeader : String
@@ -59,16 +62,10 @@ compileExpr :
   (outfile : String) ->
   Core (Maybe String)
 compileExpr c s tmpDir outputDir tm outfile =
-  do es <- compileToJS c s tm
+  do es <- compileToJS c s tm outputDir outfile
      let res = addHeaderAndFooter outfile es
      let out = outputDir </> outfile
      Core.writeFile out res
-     case result of
-        Left sourceMap => do
-            let mapOut = outputDir </> outfile ++ ".map"
-            smap <- showJSON sourceMap outfile
-            Core.writeFile mapOut smap
-        Right js => pure ()
      pure (Just out)
 
 ||| Node implementation of the `executeExpr` interface.
