@@ -242,6 +242,12 @@ caseBlock {vars} rigc elabinfo fc nest env scr scrtm scrty caseRig alts expected
            unwords [ "Setting totality requirement for", show casen
                    , "to", show tot]
          setFlag fc (Resolved cidx) (SetTotal tot)
+
+         let tcinline = fromMaybe False (elem TCInline <$> (flags <$> parentDef))
+         log "elab.case" 5 $
+          unwords [ "Setting tcinline for", show casen
+                  , "to", show tcinline ]
+         when tcinline $ setFlag fc (Resolved cidx) TCInline
          let caseRef : Term vars = Ref fc Func (Resolved cidx)
 
          let applyEnv = applyToFull fc caseRef env
