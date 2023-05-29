@@ -1,0 +1,13 @@
+1/1: Building ErasedMatch (ErasedMatch.idr)
+Main> 0 Main.foo
+Arguments [{arg:0}]
+Compile time tree: case {arg:0} of
+  'a' => 1
+  'c' => 2
+  _ => 0
+Erasable args: [0]
+Refers to: Prelude.Types.Z, Prelude.Types.S
+Refers to (runtime): Prelude.Types.Z, Prelude.Types.S
+Flags: allguarded, covering
+Main> 
+Bye for now!

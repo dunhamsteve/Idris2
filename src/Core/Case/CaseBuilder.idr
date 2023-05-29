@@ -347,6 +347,9 @@ clauseType phase (MkPatClause pvars (MkInfo arg _ ty :: rest) pid rhs)
              then VarClause
              else splitCon a xs
     getClauseType phase (PAs _ _ p) t = getClauseType phase p t
+    getClauseType (CompileTime cr) l (Known r t) = if isErased r && not (isErased cr)
+      then VarClause
+      else clauseType' l
     getClauseType phase l (Known r t) = if isErased r
       then VarClause
       else clauseType' l
