@@ -15,7 +15,7 @@ import Libraries.Data.SortedMap
 --          Call Graph
 --------------------------------------------------------------------------------
 
--- direct calls from a top-level funtion's expression to other
+-- direct calls from a top-level function's expression to other
 -- top-level functions.
 0 CallGraph : Type
 CallGraph = SortedMap Name (SortedSet Name)
@@ -104,6 +104,7 @@ sortDef n = do
   appendDef t
 
 isConstant : (recursiveFunctions : SortedSet Name) -> (Name,FC,NamedDef) -> Bool
+isConstant rec (n, _, MkNmFun [] (NmCrash _ _)) = False
 isConstant rec (n, _, MkNmFun [] _) = not $ contains n rec
 isConstant _   _                  = False
 
