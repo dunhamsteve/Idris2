@@ -84,7 +84,7 @@ defFails ns (MkNmFun args x) = fails x
       || fromMaybe False (fails <$> x)
     fails (NmPrimVal fc cst) = False
     fails (NmErased fc) = False
-    fails (NmCrash fc str) = True
+    fails (NmCrash fc str) = str == "No clauses"
 defFails ns (MkNmCon tag arity nt) = False
 defFails ns (MkNmForeign ccs fargs x) = False
 defFails ns (MkNmError x) = True
