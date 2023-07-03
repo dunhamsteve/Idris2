@@ -817,6 +817,7 @@ HasNames Error where
   full gam (InRHS fc n err) = InRHS fc <$> full gam n <*> full gam err
   full gam (MaybeMisspelling err xs) = MaybeMisspelling <$> full gam err <*> pure xs
   full gam (WarningAsError wrn) = WarningAsError <$> full gam wrn
+  full gam (InDef fc n err) = InDef fc n <$> traverseList1 (full gam) err
 
   resolved gam (Fatal err) = Fatal <$> resolved gam err
   resolved _ (CantConvert fc gam rho s t)
@@ -908,6 +909,7 @@ HasNames Error where
   resolved gam (InRHS fc n err) = InRHS fc <$> resolved gam n <*> resolved gam err
   resolved gam (MaybeMisspelling err xs) = MaybeMisspelling <$> resolved gam err <*> pure xs
   resolved gam (WarningAsError wrn) = WarningAsError <$> resolved gam wrn
+  resolved gam (InDef fc n err) = InDef fc n <$> traverseList1 (resolved gam) err
 
 export
 HasNames Totality where

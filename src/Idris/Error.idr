@@ -686,6 +686,7 @@ perrorRaw (InRHS fc n err)
     = pure $ hsep [ errorDesc (reflow "While processing right hand side of" <++> code (pretty0 !(prettyName n))) <+> dot
                   , !(perrorRaw err)
                   ]
+perrorRaw (InDef fc n err) = pure $ vsep !(traverse perrorRaw (forget err))
 
 perrorRaw (MaybeMisspelling err ns) = pure $ !(perrorRaw err) <+> case ns of
   (n ::: []) => reflow "Did you mean:" <++> code (pretty0 n) <+> "?"

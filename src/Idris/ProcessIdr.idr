@@ -87,17 +87,27 @@ processDecl (PMutual fc ps)
 
 processDecl decl
     = catch (do impdecls <- desugarDecl [] decl
-                traverse_ (Check.processDecl [] (MkNested []) []) impdecls
-                pure [])
+                errs <- catMaybes <$> traverse processImpDecl impdecls
+                pure errs)
             (\err => do giveUpConstraints -- or we'll keep trying...
                         pure [err])
+      where
+        processImpDecl : ImpDecl -> Core (Maybe Error)
+        processImpDecl impdecl = catch (Check.processDecl [] (MkNested[]) [] impdecl >> pure Nothing)
+                                       (pure . Just)
+
 
 processDecls decls
     = do xs <- concat <$> traverse processDecl decls
          Nothing <- checkDelayedHoles
              | Just err => pure (if null xs then [err] else xs)
          errs <- logTime 3 ("Totality check overall") getTotalityErrors
+         let xs = concatMap nestedErrors xs
          pure (xs ++ errs)
+      where
+        nestedErrors : Error -> List Error
+        nestedErrors (InDef _ _ errs) = reverse $ forget errs
+        nestedErrors err = [err]
 
 readModule : {auto c : Ref Ctxt Defs} ->
              {auto u : Ref UST UState} ->

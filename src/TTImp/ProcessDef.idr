@@ -999,8 +999,8 @@ processDef opts nest env fc n_in cs_in
          log "declare.def" 5 $ "Traversing clauses of " ++ show n ++ " with mult " ++ show mult
          let treq = fromMaybe !getDefaultTotalityOption (findSetTotal (flags gdef))
          cs <- withTotality treq $
-               traverse (checkClause mult (visibility gdef) treq
-                                     hashit nidx opts nest env) cs_in
+               traverse' (checkClause mult (visibility gdef) treq
+                                      hashit nidx opts nest env) cs_in [] []
 
          let pats = map toPats (rights cs)
 
@@ -1068,6 +1068,14 @@ processDef opts nest env fc n_in cs_in
          setDefaultTotalityOption defaultTotality
          pure x
 
+    -- collect errors and wrap with InDef
+    traverse' : (a -> Core b) -> List a -> List b -> List Error -> Core (List b)
+    traverse' f [] acc [] = pure (reverse acc)
+    traverse' f [] acc (e :: es) = throw $ InDef fc n_in (e ::: es)
+    traverse' f (x :: xs) acc errs =
+      case !(catch (Right <$> f x) (pure . Left)) of
+        (Left err) => traverse' f xs acc (err :: errs)
+        (Right x) =>  traverse' f xs (x :: acc) errs
 
     simplePat : forall vars . Term vars -> Bool
     simplePat (Local _ _ _ _) = True

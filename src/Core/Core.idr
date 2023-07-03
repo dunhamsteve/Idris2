@@ -5,6 +5,7 @@ import Core.Env
 import Core.TT
 
 import Data.List1
+import Data.String
 import Data.SnocList -- until 0.6.0
 import Data.Vect
 
@@ -182,6 +183,7 @@ data Error : Type where
      InCon : FC -> Name -> Error -> Error
      InLHS : FC -> Name -> Error -> Error
      InRHS : FC -> Name -> Error -> Error
+     InDef : FC -> Name -> List1 Error -> Error
 
      MaybeMisspelling : Error -> List1 String -> Error
      WarningAsError : Warning -> Error
@@ -389,6 +391,7 @@ Show Error where
          (n ::: []) => ": " ++ n ++ "?"
          _ => " any of: " ++ showSep ", " (map show (forget ns)) ++ "?"
   show (WarningAsError w) = show w
+  show (InDef fc n errors) = show errors
 
 export
 getWarningLoc : Warning -> FC
@@ -477,6 +480,7 @@ getErrorLoc (InLHS _ _ err) = getErrorLoc err
 getErrorLoc (InRHS _ _ err) = getErrorLoc err
 getErrorLoc (MaybeMisspelling err _) = getErrorLoc err
 getErrorLoc (WarningAsError warn) = Just (getWarningLoc warn)
+getErrorLoc (InDef fc x errors) = pure fc
 
 export
 killWarningLoc : Warning -> Warning
@@ -564,6 +568,7 @@ killErrorLoc (InLHS fc x err) = InLHS emptyFC x (killErrorLoc err)
 killErrorLoc (InRHS fc x err) = InRHS emptyFC x (killErrorLoc err)
 killErrorLoc (MaybeMisspelling err xs) = MaybeMisspelling (killErrorLoc err) xs
 killErrorLoc (WarningAsError wrn) = WarningAsError (killWarningLoc wrn)
+killErrorLoc (InDef fc x errors) = InDef fc x (map killErrorLoc errors)
 
 -- Core is a wrapper around IO that is specialised for efficiency.
 export

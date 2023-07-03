@@ -9,6 +9,16 @@ Cover:16:8--16:9
  16 | badBar Z = Z
              ^
 
+Error: While processing left hand side of badBar. Can't match on S ?_ as it must have a polymorphic type.
+
+Cover:17:9--17:12
+ 13 | cty _ x = S (S Z)
+ 14 | 
+ 15 | badBar : a -> Nat
+ 16 | badBar Z = Z
+ 17 | badBar (S _) = S Z
+              ^^^
+
 Main> Main.foo: foo (0, S _)
 foo (S _, _)
 Main> Main.bar: bar _

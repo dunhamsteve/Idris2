@@ -9,3 +9,13 @@ erased:7:17--7:21
  7 | nameOf (MyMaybe Bool) = "MyMaybe Bool"
                      ^^^^
 
+Error: While processing left hand side of nameOf. Can't match on Int (Erased argument).
+
+erased:8:17--8:20
+ 4 | 
+ 5 | -- Should fail since type argument is deleted
+ 6 | nameOf : Type -> String
+ 7 | nameOf (MyMaybe Bool) = "MyMaybe Bool"
+ 8 | nameOf (MyMaybe Int) = "MyMaybe Int"
+                     ^^^
+
