@@ -36,8 +36,6 @@ import Network.Socket.Raw
 
 import TTImp.Interactive.Completion
 
-import Libraries.Data.String.Extra -- until 0.6.0 release
-
 %default covering
 
 export
