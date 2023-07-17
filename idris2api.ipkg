@@ -177,7 +177,6 @@ modules =
     Libraries.Data.NameMap,
     Libraries.Data.NameMap.Traversable,
     Libraries.Data.PosMap,
-    Libraries.Data.Primitives,
     Libraries.Data.Span,
     Libraries.Data.SortedMap,
     Libraries.Data.SortedSet,
