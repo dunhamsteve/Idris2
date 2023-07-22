@@ -516,7 +516,7 @@ compileToSSInc c mods libs appdir tm outfile
          let ctm = forget tmcexp
 
          loadlibs <- traverse (map fromString . loadLib appdir) (nub libs)
-         loadsos <- traverse (map fromString . loadSO appdir) (nub mods)
+         loadsos <- traverse (map fromString . loadSO appdir) (reverse $ nub $ reverse $ mods)
 
          main <- schExp empty (chezExtPrim empty) chezString 0 ctm
          support <- readDataFile "chez/support.ss"
