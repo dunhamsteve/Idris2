@@ -337,7 +337,12 @@ calcTerminating loc n
                      let init = prefixPath pred g
                      setPrefixTerminating init g
                      pure $ NotTerminating (BadPath init g))
-         pure IsTerminating
+         setTerminating loc n IsTerminating
+         res <- findNonTerminatingPaths (map (fst . snd) $ SortedSet.toList work)
+         case res of
+            IsTerminating => pure IsTerminating
+            t => setTerminating loc n t >> pure t
+
   where
     addCases' : Defs -> NameMap () -> List Name -> Core (List Name)
     addCases' defs all [] = pure (keys all)
@@ -354,3 +359,9 @@ calcTerminating loc n
 
     addCases : Defs -> List Name -> Core (List Name)
     addCases defs ns = addCases' defs empty ns
+
+    findNonTerminatingPaths : List Name -> Core Terminating
+    findNonTerminatingPaths [] = pure IsTerminating
+    findNonTerminatingPaths (n :: ns) = case !(calcTerminating loc n) of
+      IsTerminating => findNonTerminatingPaths ns
+      t => pure t

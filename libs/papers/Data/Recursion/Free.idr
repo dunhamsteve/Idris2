@@ -135,7 +135,7 @@ namespace DybjerSetzer
   ||| it fully on that input and obtain a pure return value.
   public export
   evaluate : (f : PiG a b) -> (i : a) -> Mu (Domain f) i -> b i
-  evaluate f i inDom = Decode inDom
+  evaluate f i inDom = assert_total $ Decode inDom
 
   ||| If every input value is in the domain then the function is total.
   public export
