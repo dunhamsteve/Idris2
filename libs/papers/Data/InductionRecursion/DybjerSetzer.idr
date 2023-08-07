@@ -36,7 +36,7 @@ mutual
   public export
   data Mu : (f : (s : sort) -> Code input (input s)) -> (s : sort) -> Type where
     MkMu : {f : (s : sort) -> Code input (input s)} -> {s : sort} ->
-           DecodeType (f s) (Mu f) Decode -> Mu {input} f s
+           assert_total (DecodeType (f s) (Mu f) Decode) -> Mu {input} f s
 
   public export
   Decode : {f : (s : sort) -> Code input (input s)} ->
