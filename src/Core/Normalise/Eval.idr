@@ -286,7 +286,7 @@ parameters (defs : Defs, topopts : EvalOpts)
              --                        pure $ "Found function: " ++ show n'
              Just res <- lookupCtxtExact n (gamma defs)
                   | Nothing => do logC "eval.stuck.outofscope" 5 $ do n' <- toFullNames n
-                                                                      pure $ "Stuck function: " ++ show n'
+                                                                      pure $ "Stuck function \{ifThenElse (inlineOnly $ gamma defs) "(inlineOnly) " ""}\{show n'}"
                                   pure def
              let redok1 = evalAll topopts
              let redok2 = reducibleInAny (currentNS defs :: nestedNS defs)
