@@ -112,6 +112,9 @@
   To avoid confusing tooling about which `.ipkg` to use, the
   package file is under the newly added `ipkg` sub-directory.
 
+* When no module declaration is present, doc strings are assigned to the
+  next declaration.
+
 ### Library changes
 
 #### Prelude

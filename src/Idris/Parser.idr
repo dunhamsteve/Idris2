@@ -1925,32 +1925,28 @@ import_ fname indents
          (reexp, ns, nsAs) <- pure b.val
          pure (MkImport (boundToFC fname b) reexp ns nsAs)
 
-export
-prog : OriginDesc -> EmptyRule Module
-prog fname
-    = do b <- bounds (do doc    <- optDocumentation fname
-                         nspace <- option (nsAsModuleIdent mainNS)
-                                     (do decoratedKeyword fname "module"
-                                         decorate fname Module $ mustWork moduleIdent)
-                         imports <- block (import_ fname)
-                         pure (doc, nspace, imports))
-         ds      <- block (topDecl fname)
-         (doc, nspace, imports) <- pure b.val
-         pure (MkModule (boundToFC fname b)
-                        nspace imports doc (collectDefs (concat ds)))
 
 export
 progHdr : OriginDesc -> EmptyRule Module
 progHdr fname
-    = do b <- bounds (do doc    <- optDocumentation fname
-                         nspace <- option (nsAsModuleIdent mainNS)
-                                     (do decoratedKeyword fname "module"
-                                         mustWork moduleIdent)
-                         imports <- block (import_ fname)
-                         pure (doc, nspace, imports))
+    = do b <- bounds (do (doc, nspace) <- option ("", nsAsModuleIdent mainNS)
+                            (do doc <- optDocumentation fname
+                                decoratedKeyword fname "module"
+                                (doc,) <$> decorate fname Module (mustWork moduleIdent))
+                         (doc', imports) <- option ("",[])
+                            (do doc <- optDocumentation fname
+                                (doc,) <$> map forget (nonEmptyBlock (import_ fname)))
+                         pure (doc ++ doc', nspace, imports))
          (doc, nspace, imports) <- pure b.val
          pure (MkModule (boundToFC fname b)
                         nspace imports doc [])
+
+export
+prog : OriginDesc -> EmptyRule Module
+prog fname
+    = do MkModule b nspace imports doc _ <- progHdr fname
+         ds <- block (topDecl fname)
+         pure (MkModule b nspace imports doc (collectDefs (concat ds)))
 
 parseMode : Rule REPLEval
 parseMode
