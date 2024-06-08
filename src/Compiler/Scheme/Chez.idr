@@ -363,6 +363,8 @@ mkStruct (CFStruct n flds)
                            ++ sepBy "\n\t" !(traverse showFld flds) ++ "))\n"
   where
     showFld : (String, CFType) -> Core Builder
+    showFld (n', CFString) = throw (GenericMsg EmptyFC "String not allowed in a foreign struct \{n}.\{n'}")
+    showFld (n', (CFFun _ _)) = throw (GenericMsg EmptyFC "Function types not allowed in a foreign struct \{n}.\{n'}")
     showFld (n, ty) = pure $ "[" ++ fromString n ++ " " ++ !(cftySpec emptyFC ty) ++ "]"
 mkStruct (CFIORes t) = mkStruct t
 mkStruct (CFFun a b) = do [| mkStruct a ++ mkStruct b |]

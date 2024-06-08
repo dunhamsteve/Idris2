@@ -106,6 +106,9 @@ This CHANGELOG describes the merged but unreleased changes. Please see [CHANGELO
   That file already had a NodeJS shebang at the top, so now it is fully ready to
   go after compilation.
 
+* `String` can now be used in `System.FFI.Struct` on the javascript
+  backend.
+
 ### Library changes
 
 #### Prelude
