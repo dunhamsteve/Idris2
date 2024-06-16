@@ -1,0 +1,9 @@
+1/1: Building Outdent (Outdent.idr)
+Error: Unexpected outdent in expression.
+
+Outdent:3:9--3:13
+ 1 | foo : Nat -> Nat
+ 2 | foo x = let n = if x == 42
+ 3 |         then pure 0
+             ^^^^
+

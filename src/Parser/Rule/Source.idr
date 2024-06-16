@@ -455,26 +455,31 @@ export
 init : IndentInfo
 init = 0
 
-continueF : EmptyRule () -> (indent : IndentInfo) -> EmptyRule ()
-continueF err indent
-    = do eoi; err
-  <|> do keyword "where"; err
+continueF : (String -> EmptyRule ()) -> Maybe String -> (indent : IndentInfo) -> EmptyRule ()
+continueF err req indent
+    = do eoi; err "Unexpected end of expression"
+  <|> do keyword "where"; err $ maybe "Unexpected end of expression" (\kw => "Expected '\{kw}'") req
   <|> do col <- column
-         when (col <= indent)
-            err
+         when (col <= indent) $
+          case req of
+            Nothing => err "Unexpected outdent in expression"
+            Just kw => err $ if matches kw !(peek) then "Unexpected outdent in expression" else "Expected '\{kw}'"
+  where
+    matches : String -> Token -> Bool
+    matches x (Keyword y) = x == y
+    matches x (Symbol y)  = x == y
+    matches x (Pragma y)  = x == y
+    matches _ _ = False
 
 ||| Fail if this is the end of a block entry or end of file
 export
 continue : (indent : IndentInfo) -> EmptyRule ()
-continue = continueF (fail "Unexpected end of expression")
+continue = continueF fail Nothing
 
 ||| As 'continue' but failing is fatal (i.e. entire parse fails)
 export
 mustContinue : (indent : IndentInfo) -> Maybe String -> EmptyRule ()
-mustContinue indent Nothing
-   = continueF (fatalError "Unexpected end of expression") indent
-mustContinue indent (Just req)
-   = continueF (fatalError ("Expected '" ++ req ++ "'")) indent
+mustContinue indent req = continueF fatalError req indent
 
 data ValidIndent =
   |||  In {}, entries can begin in any column
