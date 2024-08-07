@@ -21,8 +21,18 @@
 
 FILE *idris2_openFile(char *name, char *mode) {
 #ifdef _WIN32
+  DWORD attr = GetFileAttributes(name);
+  if (attr != INVALID_FILE_ATTRIBUTES && attr & FILE_ATTRIBUTE_DIRECTORY) {
+    errno = EISDIR;
+    return NULL;
+  }
   FILE *f = win32_u8fopen(name, mode);
 #else
+  struct stat buf;
+  if (0 == stat(name, &buf) && S_IFDIR & buf.st_mode) {
+    errno = EISDIR;
+    return NULL;
+  }
   FILE *f = fopen(name, mode);
 #endif
   return (void *)f;
