@@ -1590,7 +1590,7 @@ failDecls fname indents
                     col <- column
                     decoratedKeyword fname "failing"
                     commit
-                    msg <- optional (decorate fname Data simpleStr)
+                    msg <- optional (decorate fname Data (simpleMultiStr <|> simpleStr ))
                     (msg,) <$> nonEmptyBlockAfter col (topDecl fname)
          pure $
            let (msg, ds) = msgds.val
