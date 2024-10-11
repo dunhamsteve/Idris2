@@ -45,7 +45,7 @@ match nty (n, i, rty)
 dropNoMatch : {auto c : Ref Ctxt Defs} ->
               Maybe (NF []) -> List (Name, Int, GlobalDef) ->
               Core (List (Name, Int, GlobalDef))
-dropNoMatch _ [t] = pure [t]
+-- dropNoMatch _ [t] = pure [t]
 dropNoMatch Nothing ts = pure ts
 dropNoMatch (Just nty) ts
     = -- if the return type of a thing in ts doesn't match nty, drop it
