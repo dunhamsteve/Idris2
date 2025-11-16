@@ -25,9 +25,3 @@ void idris2_free(void *ptr) {
   }
   free(ptr);
 }
-
-// TODO: remove `idrnet_malloc` and `idrnet_free` after bootstrap update
-
-void *idrnet_malloc(int size) { return idris2_malloc(size); }
-
-void idrnet_free(void *ptr) { idris2_free(ptr); }
