@@ -76,6 +76,7 @@ should target this file (`CHANGELOG_NEXT`).
 * Optimised the passing of local variables during compile-time normalisation.
 * Added `getFC` to elaborator reflection, exposing the macro call-site source
   location.
+* Fix exponential time issue in totality checking with large data on the left hand side (#3696).
 
 ### Building/Packaging changes
 
