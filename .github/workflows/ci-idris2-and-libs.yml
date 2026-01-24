@@ -354,7 +354,10 @@ jobs:
         run: make all IDRIS2_BOOT="idris2 -Werror" && make install
         shell: bash
       - name: Test self-hosted
-        run: make ci-macos-test INTERACTIVE=''
+        run: |
+          vm_stat
+          ls tests/linear
+          make ci-macos-test INTERACTIVE=''
         shell: bash
 
   # RACKET

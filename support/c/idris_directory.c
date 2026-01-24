@@ -2,6 +2,7 @@
 
 #include <dirent.h>
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -34,6 +35,7 @@ typedef struct {
 void *idris2_openDir(char *dir) {
   DIR *d = opendir(dir);
   if (d == NULL) {
+    IDRIS2_VERIFY(errno != ENOMEM, "opendir ENOMEM");
     return NULL;
   } else {
     DirInfo *di = malloc(sizeof(DirInfo));
@@ -61,8 +63,8 @@ char *idris2_nextDirEntry(void *d) {
   // end of stream and failure.
   errno = 0;
   struct dirent *de = readdir(di->dirptr);
-
   if (de == NULL) {
+    IDRIS2_VERIFY(errno != ENOMEM, "readdir ENOMEM");
     return NULL;
   } else {
     return de->d_name;
