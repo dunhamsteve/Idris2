@@ -10,6 +10,7 @@ import Core.Value
 
 import Idris.REPL.Opts
 import Idris.Syntax
+import Idris.Syntax.Builtin
 
 import TTImp.TTImp
 
@@ -784,7 +785,7 @@ checkExp : {vars : _} ->
            (got : Glued vars) -> (expected : Maybe (Glued vars)) ->
            Core (Term vars, Glued vars)
 checkExp rig elabinfo env fc tm got (Just exp)
-    = do vs <- convertWithLazy (withLazy tm) fc elabinfo env got exp
+    = do vs <- convertWithLazy !(withLazy tm) fc elabinfo env got exp
          case (constraints vs) of
               [] => case addLazy vs of
                          NoLazy => do logTerm "elab" 5 "Solved" tm
@@ -809,7 +810,8 @@ checkExp rig elabinfo env fc tm got (Just exp)
                                              pure (TDelay fc r ty tm, exp)
     where
       -- do not insert force in front of an explicit delay
-      withLazy : Term vars -> Bool
-      withLazy (TDelay fc1 lz ty arg) = False
-      withLazy _ = True
+      withLazy : Term vars -> Core Bool
+      withLazy tm = case getFnArgs tm of
+          (Ref _ Func qn, _) => pure $ !(toFullNames qn) /= delayName
+          (f, args) => pure True
 checkExp rig elabinfo env fc tm got Nothing = pure (tm, got)

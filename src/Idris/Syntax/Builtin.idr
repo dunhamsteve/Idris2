@@ -39,3 +39,7 @@ eqName = NS builtinNS (UN $ Basic "===")
 export
 heqName : Name
 heqName = NS builtinNS (UN $ Basic "~=~")
+
+export
+delayName : Name
+delayName = NS builtinNS (UN $ Basic "delay")
