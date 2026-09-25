@@ -800,7 +800,7 @@ mutual
                  fcCase = boundToFC fname lhs
                  n = MN "lcase" 0 in
              (PLam fcCase top Explicit (PRef fcCase n) (PInfer fcCase) $
-                 PCase (virtualiseFC fc) [] (PRef fcCase n) [alt]))
+                 PCase (virtualiseFC fc) [] (PRef fcCase n) Nothing [alt]))
 
        bindAll : List (RigCount, WithBounds PTerm, PTerm, PiInfo PTerm) -> PTerm -> PTerm
        bindAll [] scope = scope
@@ -824,7 +824,7 @@ mutual
                  fcCase = virtualiseFC $ boundToFC fname endCase
                  n = MN "lcase" 0 in
               PLam fcCase top Explicit (PRef fcCase n) (PInfer fcCase) $
-                PCase (virtualiseFC fc) [] (PRef fcCase n) b.val)
+                PCase (virtualiseFC fc) [] (PRef fcCase n) Nothing b.val)
 
   letBlock : OriginDesc -> IndentInfo -> Rule (WithBounds (Either LetBinder LetDecl))
   letBlock fname indents = bounds (letBinder <||> letDecl) where
@@ -856,11 +856,12 @@ mutual
       = do opts <- many (fnDirectOpt fname)
            b <- bounds (do decoratedKeyword fname "case"
                            scr <- expr pdef fname indents
+                           ty <- optional (decoratedSymbol fname ":" *> typeExpr (pnoeq pdef) fname indents)
                            mustWork (commitKeyword fname indents "of")
                            alts <- block (caseAlt fname)
-                           pure (scr, alts))
-           (scr, alts) <- pure b.val
-           pure (PCase (virtualiseFC $ boundToFC fname b) opts scr alts)
+                           pure (scr, ty, alts))
+           (scr, ty, alts) <- pure b.val
+           pure (PCase (virtualiseFC $ boundToFC fname b) opts scr ty alts)
 
 
   caseAlt : OriginDesc -> IndentInfo -> Rule PClause

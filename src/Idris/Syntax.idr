@@ -97,7 +97,7 @@ mutual
        PLet : FC -> RigCount -> (pat : PTerm' nm) ->
               (nTy : PTerm' nm) -> (nVal : PTerm' nm) -> (scope : PTerm' nm) ->
               (alts : List (PClause' nm)) -> PTerm' nm
-       PCase : FC -> List (PFnOpt' nm) -> PTerm' nm -> List (PClause' nm) -> PTerm' nm
+       PCase : FC -> List (PFnOpt' nm) -> PTerm' nm -> Maybe (PTerm' nm) -> List (PClause' nm) -> PTerm' nm
        PLocal : FC -> List (PDecl' nm) -> (scope : PTerm' nm) -> PTerm' nm
        PUpdate : FC -> List (PFieldUpdate' nm) -> PTerm' nm
        PApp : FC -> PTerm' nm -> PTerm' nm -> PTerm' nm
@@ -172,7 +172,7 @@ mutual
   getPTermLoc (PPi fc _ _ _ _ _) = fc
   getPTermLoc (PLam fc _ _ _ _ _) = fc
   getPTermLoc (PLet fc _ _ _ _ _ _) = fc
-  getPTermLoc (PCase fc _ _ _) = fc
+  getPTermLoc (PCase fc _ _ _ _) = fc
   getPTermLoc (PLocal fc _ _) = fc
   getPTermLoc (PUpdate fc _) = fc
   getPTermLoc (PApp fc _ _) = fc
@@ -867,10 +867,14 @@ parameters {0 nm : Type} (toName : nm -> Name)
         = "let " ++ showCount rig ++ showPTermPrec d n ++ " : " ++ showPTermPrec d ty ++ " = "
                  ++ showPTermPrec d val ++ concatMap showAlt alts ++
                  " in " ++ showPTermPrec d sc
-  showPTermPrec _ (PCase _ _ tm cs)
-        = "case " ++ showPTerm tm ++ " of { " ++
+  showPTermPrec _ (PCase _ _ tm ty cs)
+        = "case " ++ showPTerm tm ++ showTy ty ++ " of { " ++
             showSep " ; " (map showCase cs) ++ " }"
       where
+        showTy : Maybe (PTerm' nm) -> String
+        showTy (Just tm) = " : " ++ showPTerm tm
+        showTy Nothing = ""
+
         showCase : PClause' nm -> String
         showCase (MkPatClause _ lhs rhs _) = showPTerm lhs ++ " => " ++ showPTerm rhs
         showCase (MkWithClause _ lhs _ flags _) = " | <<with alts not possible>>"

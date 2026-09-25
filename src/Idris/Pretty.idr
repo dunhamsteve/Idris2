@@ -302,11 +302,15 @@ mutual
              ; _ => hardline <+> indent 4 (vsep (prettyAlt <$> alts)) <+> hardline <+> in_
              }
         <+> group (align $ hang 2 $ pretty sc)
-    prettyPrec d (PCase _ _ tm cs) =
+    prettyPrec d (PCase _ _ tm ty cs) =
       parenthesise (d > startPrec) $
-        case_ <++> pretty tm <++> of_ <+> nest 2 (
+        case_ <++> addType (pretty tm) ty <++> of_ <+> nest 2 (
         let punctuation = lcurly :: (semi <$ fromMaybe [] (tail' [1..length cs])) in
         line <+> (vsep $ zipWith (<++>) punctuation (prettyPClause <$> cs) ++ [rcurly]))
+      where
+        addType : Doc IdrisSyntax -> Maybe IPTerm -> Doc IdrisSyntax
+        addType doc Nothing = doc
+        addType doc (Just ty) = doc <++> ":" <++> pretty ty
     prettyPrec d (PLocal _ ds sc) =
       parenthesise (d > startPrec) $ group $ align $
         let_ <++> braces (angles (angles "definitions")) <+> line <+> in_ <++> pretty sc

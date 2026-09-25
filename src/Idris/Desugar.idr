@@ -366,10 +366,12 @@ mutual
       = pure $ ICase fc [] !(desugarB side ps nVal) !(desugarB side ps nTy)
                         !(traverse (map snd . desugarClause ps True)
                             (MkPatClause fc pat scope [] :: alts))
-  desugarB side ps (PCase fc opts scr cls)
+  desugarB side ps (PCase fc opts scr ty cls)
       = do opts <- traverse (desugarFnOpt ps) opts
            scr <- desugarB side ps scr
-           let scrty = Implicit (virtualiseFC fc) False
+           scrty <- case ty of
+             Just tm => desugarB side ps tm
+             Nothing => pure $ Implicit (virtualiseFC fc) False
            cls <- traverse (map snd . desugarClause ps True) cls
            pure $ ICase fc opts scr scrty cls
   desugarB side ps (PLocal fc xs scope)

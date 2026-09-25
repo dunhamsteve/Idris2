@@ -334,10 +334,10 @@ mutual
       = do opts' <- traverse toPFnOpt opts
            sc' <- toPTerm startPrec sc
            alts' <- traverse toPClause alts
-           bracket p startPrec (mkIf (PCase fc opts' sc' alts'))
+           bracket p startPrec (mkIf (PCase fc opts' sc' Nothing alts'))
     where
       mkIf : IPTerm -> IPTerm
-      mkIf tm@(PCase loc opts sc
+      mkIf tm@(PCase loc opts sc _
                  [ MkPatClause _ (PRef _ tval) t []
                  , MkPatClause _ (PRef _ fval) f []])
          = if dropNS (rawName tval) == UN (Basic "True")
