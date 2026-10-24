@@ -1,0 +1,3 @@
+. ../../../testutils.sh
+
+timeout 5 $idris2 --no-banner --console-width 0 --no-color --check Issue3763.idr
