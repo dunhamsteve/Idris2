@@ -4,7 +4,6 @@ module Data.Fin.Split
 import public Data.Fin
 import Data.Fin.Properties
 
-import Syntax.WithProof
 import Syntax.PreorderReasoning
 
 %default total
@@ -106,14 +105,14 @@ splitOfIndexProdInverse (FS k) l
 export
 indexOfSplitProdInverse : {m, n : Nat} -> (f : Fin (m * n)) ->
                           uncurry (indexProd {m} {n}) (splitProd {m} {n} f) = f
-indexOfSplitProdInverse {m = S _} f with (@@ splitSum f)
-  indexOfSplitProdInverse {m = S _} f | (Left l ** eq) = rewrite eq in Calc $
+indexOfSplitProdInverse {m = S _} f with (splitSum f) proof eq
+  indexOfSplitProdInverse {m = S _} f | Left l = Calc $
     |~ indexSum (Left l)
     ~~ indexSum (splitSum f) ...( cong indexSum (sym eq) )
     ~~ f                     ...( indexOfSplitSumInverse f )
-  indexOfSplitProdInverse f | (Right r ** eq) with (@@ splitProd r)
-    indexOfSplitProdInverse f | (Right r ** eq) | ((p, q) ** eq2)
-      = rewrite eq in rewrite eq2 in Calc $
+  indexOfSplitProdInverse f | Right r with (splitProd r) proof eq2
+    indexOfSplitProdInverse f | Right r | (p, q)
+      = Calc $
         |~ indexProd (FS p) q
         ~~ shift n (indexProd p q)                   ...( Refl )
         ~~ shift n (uncurry indexProd (splitProd r)) ...( cong (shift n . uncurry indexProd) (sym eq2) )

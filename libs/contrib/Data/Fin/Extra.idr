@@ -7,7 +7,6 @@ import public Data.Fin.Split as Data.Fin.Extra
 import Data.Nat
 import Data.Nat.Division
 
-import Syntax.WithProof
 import Syntax.PreorderReasoning
 
 %default total

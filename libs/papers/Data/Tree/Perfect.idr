@@ -6,7 +6,6 @@ import Data.Nat.Views
 import Data.Nat
 import Data.Nat.Order.Properties
 import Data.Nat.Exponentiation
-import Syntax.WithProof
 import Syntax.PreorderReasoning.Generic
 
 %default total
@@ -77,9 +76,9 @@ namespace FromNat
   view : (k, n : Nat) -> (0 _ : k `LT` (pow2 n)) -> View k n
   view Z Z p = ZZ
   view (S _) Z p = void $ absurd (fromLteSucc p)
-  view k (S n) p with (@@ lt k (pow2 n))
-    view k (S n) p | (True ** eq) = SLT (ltIsLT k (pow2 n) eq)
-    view k (S n) p | (False ** eq) = SNLT gte prf where
+  view k (S n) p with (lt k (pow2 n)) proof eq
+    view k (S n) p | True = SLT (ltIsLT k (pow2 n) eq)
+    view k (S n) p | False = SNLT gte prf where
 
       0 gte : k `GTE` pow2 n
       gte = notLTImpliesGTE (notltIsNotLT k (pow2 n) eq)

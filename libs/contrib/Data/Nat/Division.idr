@@ -80,12 +80,10 @@ sndDivmodNatNZeqMod numer denom prf1 prf2 =
 bound_mod'' : (fuel, numer, predDenom : Nat) -> (numer `LTE` fuel)
            -> (mod'' fuel numer predDenom) `LTE` predDenom
 bound_mod'' 0        0     predDenom LTEZero = LTEZero
-bound_mod'' (S fuel) numer predDenom enough  = case @@(Data.Nat.lte numer predDenom) of
-  (True  ** numer_lte_predn)  => rewrite numer_lte_predn in
-                                 Properties.lteIsLTE _ _ numer_lte_predn
-  (False ** numer_gte_n    )  => rewrite numer_gte_n in
-                                 bound_mod'' fuel (numer `minus` (S predDenom)) predDenom
-                                                  (fuelLemma numer predDenom fuel enough)
+bound_mod'' (S fuel) numer predDenom enough  with (Data.Nat.lte numer predDenom) proof pf
+  _ | True  = Properties.lteIsLTE _ _ pf
+  _ | False = bound_mod'' fuel (numer `minus` (S predDenom)) predDenom
+                                (fuelLemma numer predDenom fuel enough)
 
 export
 boundModNatNZ : (numer, denom : Nat) -> (0 denom_nz : NonZero denom)
@@ -99,13 +97,11 @@ divisionTheorem' : (numer, predDenom : Nat)
                 -> numer = (mod'' fuel numer predDenom) + (div'' fuel numer predDenom) * (S predDenom)
 
 divisionTheorem'  0     predDenom  0       LTEZero = Refl
-divisionTheorem'  numer predDenom (S fuel) enough with (@@(Data.Nat.lte numer predDenom))
- divisionTheorem' numer predDenom (S fuel) enough | (True ** prf)
-   = rewrite prf in
-     rewrite plusZeroRightNeutral numer in Refl
- divisionTheorem' numer predDenom (S fuel) enough | (False ** prf)
-   = rewrite prf in
-     let denom  : Nat
+divisionTheorem'  numer predDenom (S fuel) enough with (Data.Nat.lte numer predDenom) proof prf
+ divisionTheorem' numer predDenom (S fuel) enough | True
+   = rewrite plusZeroRightNeutral numer in Refl
+ divisionTheorem' numer predDenom (S fuel) enough | False
+   = let denom  : Nat
          denom = S predDenom
          numer' : Nat
          numer' = numer `minus` denom
@@ -171,11 +167,9 @@ divmodFuelLemma : (numer, denom, fuel1, fuel2 : Nat)
 divmodFuelLemma  0 denom 0 fuel2 LTEZero enough2 = rewrite divmodZeroZero denom fuel2 in
                                                 Refl
 divmodFuelLemma  0 denom (S fuel1) 0 enough1 LTEZero = Refl
-divmodFuelLemma  numer denom (S fuel1) (S fuel2) enough1 enough2 with (@@(Data.Nat.lte numer denom))
- divmodFuelLemma numer denom (S fuel1) (S fuel2) enough1 enough2 | (True  ** prf)  =
-   rewrite prf in Refl
- divmodFuelLemma numer denom (S fuel1) (S fuel2) enough1 enough2 | (False ** prf) =
-   rewrite prf in
+divmodFuelLemma  numer denom (S fuel1) (S fuel2) enough1 enough2 with (Data.Nat.lte numer denom) proof prf
+ divmodFuelLemma numer denom (S fuel1) (S fuel2) enough1 enough2 | True  = Refl
+ divmodFuelLemma numer denom (S fuel1) (S fuel2) enough1 enough2 | False =
    rewrite divmodFuelLemma (numer `minus` (S denom)) denom fuel1 fuel2
              (fuelLemma numer denom fuel1 enough1)
              (fuelLemma numer denom fuel2 enough2) in

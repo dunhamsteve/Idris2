@@ -13,7 +13,6 @@ import Data.List.HasLength
 import Data.Nat
 import Data.Nat.Order.Properties
 import Decidable.Equality
-import Syntax.WithProof
 
 %default total
 
@@ -58,12 +57,12 @@ prj k p (Element k' q t) with (decEq k  k')
 public export
 split : Subset Nat (flip HasLength ss) ->
         UnionT elt (ss ++ ts) -> Either (UnionT elt ss) (UnionT elt ts)
-split m (Element n p t) with (@@ lt n (fst m))
-  split m (Element n p t) | (True ** lt)
-    = Left (Element n (strengthenL m lt p) t)
-  split m (Element n p t) | (False ** notlt)
+split m (Element n p t) with (lt n (fst m)) proof pf
+  split m (Element n p t) | True
+    = Left (Element n (strengthenL m pf p) t)
+  split m (Element n p t) | False
     = let 0 lte : lte (fst m) n === True
-                = LteIslte (fst m) n (notltIsGTE n (fst m) notlt)
+                = LteIslte (fst m) n (notltIsGTE n (fst m) pf)
       in Right (Element (minus n (fst m)) (strengthenR m lte p) t)
 
 ||| We can inspect an open union over a non-empty list of families to check

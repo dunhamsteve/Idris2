@@ -17,7 +17,6 @@
 module Data.List.TailRec
 
 import Syntax.PreorderReasoning
-import Syntax.WithProof
 
 import Data.List
 import Data.List1
@@ -88,23 +87,19 @@ span_aux_ext : (p : a -> Bool) -> (xs, acc : List a) ->
   span_aux p xs acc
 span_aux_ext p []      acc = Refl
 -- This is disgusting. Please teach me a better way.
-span_aux_ext p (x::xs) acc with (@@(p x), @@(List.span p xs))
- span_aux_ext p (x::xs) acc | ((True ** px_tru), ((pre, rest)**dl_pf)) =
-   rewrite px_tru in
+span_aux_ext p (x::xs) acc with (p x) proof px | (List.span p xs) proof dl_pf
+ span_aux_ext p (x::xs) acc | True | (pre,rest) =
    rewrite dl_pf in
    let u = span_aux_ext p xs (x::acc) in
    coe (\u => (reverseOnto (x :: fst u) acc, snd u) =
                List.TailRec.span_aux p xs (x :: acc)) dl_pf u
- span_aux_ext p (x::xs) acc | ((False**px_fls), ((pre,rest)**dl_pf)) =
-   rewrite px_fls in
-   Refl
+ span_aux_ext p (x::xs) acc | False | (pre,rest) = Refl
 
 export
 span_ext : (p : a -> Bool) -> (xs : List a) ->
   List.span p xs = List.TailRec.span p xs
-span_ext p xs with (@@(List.span p xs))
-  span_ext p xs |  ((pre, rest) ** pf) =
-    rewrite pf in
+span_ext p xs with (List.span p xs) proof pf
+  span_ext p xs |  (pre, rest) =
     let u = span_aux_ext p xs [] in
     coe (\u => (fst u, snd u) = span_aux p xs []) pf u
 
@@ -130,12 +125,9 @@ split p xs = splitOnto [] p xs
 splitOnto_ext : (acc : List (List a)) -> (p : a -> Bool) -> (xs : List a) ->
               reverseOnto (List.split p xs) acc
               = List.TailRec.splitOnto acc p xs
-splitOnto_ext  acc p xs with (@@(List.break p xs))
- splitOnto_ext acc p xs | ((chunk,  []    )**pf) =
-   rewrite pf in
-   Refl
- splitOnto_ext acc p xs | ((chunk, c::rest)**pf) =
-   rewrite pf in
+splitOnto_ext  acc p xs with (List.break p xs) proof pf
+ splitOnto_ext acc p xs | (chunk,  []    ) = Refl
+ splitOnto_ext acc p xs | (chunk, c::rest) =
    rewrite splitOnto_ext (chunk::acc) p $ assert_smaller xs rest in
    Refl
 
@@ -159,9 +151,8 @@ splitAtOnto_ext : (acc : List a) -> (n : Nat) -> (xs : List a) ->
   = splitAtOnto acc n xs
 splitAtOnto_ext  acc Z     xs      = Refl
 splitAtOnto_ext  acc (S n) []      = Refl
-splitAtOnto_ext  acc (S n) (x::xs) with (@@(List.splitAt n xs))
- splitAtOnto_ext acc (S n) (x::xs) | ((tk, dr)**pf) =
-   rewrite pf in
+splitAtOnto_ext  acc (S n) (x::xs) with (List.splitAt n xs) proof pf
+ splitAtOnto_ext acc (S n) (x::xs) | (tk, dr) =
    let u = splitAtOnto_ext (x::acc) n xs in
    coe (\u => (reverseOnto (x :: fst u) acc, snd u) =
                       splitAtOnto (x :: acc) n xs) pf u
@@ -170,9 +161,8 @@ export
 splitAt_ext : (n : Nat) -> (xs : List a) ->
   List.splitAt n xs =
   List.TailRec.splitAt n xs
-splitAt_ext  n xs with (@@(List.splitAt n xs))
- splitAt_ext n xs | ((tk, dr)**pf) =
-   rewrite pf in
+splitAt_ext  n xs with (List.splitAt n xs) proof pf
+ splitAt_ext n xs | (tk, dr) =
    rewrite sym $ splitAtOnto_ext [] n xs in
    rewrite pf in
    Refl
@@ -194,20 +184,16 @@ partitionOnto_ext : (lfts, rgts : List a) -> (p : a -> Bool) -> (xs : List a) ->
   ,reverseOnto (snd $ List.partition p xs) rgts)
   = List.TailRec.partitionOnto lfts rgts p xs
 partitionOnto_ext  lfts rgts p [] = Refl
-partitionOnto_ext  lfts rgts p (x::xs) with (@@(p x), @@(List.partition p xs))
- partitionOnto_ext lfts rgts p (x::xs) | ((True **px_tru), ((dl_l, dl_r)**dl_pf))
-   = rewrite px_tru in
-     rewrite dl_pf  in
-     rewrite px_tru in
+partitionOnto_ext  lfts rgts p (x::xs) with (p x) proof px | (List.partition p xs) proof dl_pf
+ partitionOnto_ext lfts rgts p (x::xs) | True | (dl_l, dl_r)
+   = rewrite px in
      let u = partitionOnto_ext (x :: lfts) rgts p xs in
      coe (\u => (reverseOnto (x :: fst u) lfts
                 ,reverseOnto (     snd u) rgts)
                 = partitionOnto (x :: lfts) rgts p xs) dl_pf u
 
- partitionOnto_ext lfts rgts p (x::xs) | ((False**px_fls), ((dl_l, dl_r)**dl_pf))
-   = rewrite px_fls in
-     rewrite dl_pf  in
-     rewrite px_fls in
+ partitionOnto_ext lfts rgts p (x::xs) | False | (dl_l, dl_r)
+   = rewrite px in
      let u = partitionOnto_ext lfts (x :: rgts) p xs in
      coe (\u => (reverseOnto (     fst u) lfts
                 ,reverseOnto (x :: snd u) rgts)
